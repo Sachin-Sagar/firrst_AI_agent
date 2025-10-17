@@ -6,6 +6,7 @@
 
 import os
 import sys
+import time # Import the time module
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -34,23 +35,18 @@ def main():
     # This prompt provides the AI with its core instructions, defining its role,
     # capabilities, and constraints. It's crucial for guiding the AI's behavior.
     system_prompt = """
-    You are a helpful AI coding agent.
+    You are a helpful AI assistant. While your primary expertise is in coding and interacting with the local file system, you can also answer general questions.
 
-    When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
+    Primary Capabilities (Coding Tasks):
+    - When a user asks a question about the code project, they are referring to the working directory.
+    - You can list files, read their contents, write new code, and run python scripts to fulfill requests.
+    - Start by understanding the project structure before making changes.
+    - After any code modification, you should run tests to verify that everything works as expected.
+    - All file paths should be relative to the working directory.
 
-    - List files and directories
-    - Read the contents of a file
-    - Write to a file (create or update)
-    - Run a python file
-    - Search the web for information
-
-    When the user asks about the code project, they are refeering to the working directory.
-    Start by looking at the project files and figuring out how to run the project and the tests.
-    After every code edit, run the tests to ensure that the code is working as expected.
-
-
-    All paths you provide should be relative to the working directory.
-    You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+    General Conversation:
+    - If the user asks a general question not related to coding, provide a helpful and direct answer.
+    - You have access to a web search tool for up-to-date information.
     """
 
     # --- Command-Line Argument Parsing ---
@@ -111,11 +107,12 @@ def main():
             print("No response or usage metadata available.")
             return
 
-        # Print token usage if in verbose mode for debugging costs and performance.
+        # Print token usage for debugging costs and performance.
         if verbose_flag:
             print(f"User prompt: {prompt}")
-            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+
+        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
         # Append the AI's response to the conversation history.
         if response.candidates:
@@ -132,7 +129,8 @@ def main():
                 result = call_function(function_call_part, verbose_flag)
                 # Append the function's result to the history so the AI knows what happened.
                 messages.append(result)
-
+                # Add a delay to stay within the free tier rate limits
+                time.sleep(2)
         else:
             # If there are no function calls, it means the AI has its final answer.
             # Print the text response and exit the loop.

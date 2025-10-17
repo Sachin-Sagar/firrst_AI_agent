@@ -21,7 +21,7 @@ class Calculator:
         # Note: In a standard shunting-yard, '+' and '-' would have the same precedence.
         # This implementation has a slight variation.
         self.precedence = {
-            "+": 3, 
+            "+": 1,
             "-": 1,
             "*": 2,
             "/": 2,

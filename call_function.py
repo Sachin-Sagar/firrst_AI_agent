@@ -13,7 +13,7 @@ from functions.web_search import web_search  # Import the new web_search functio
 from google.genai import types
 
 # The working directory is set here to ensure all file operations are sandboxed.
-working_directory = "."
+working_directory = "calculator"
 
 def call_function(function_call_part, verbose = False):
     """
