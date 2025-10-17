@@ -14,8 +14,12 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_contnet
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
+from functions.web_search import schema_web_search
 # Import the central function dispatcher.
 from call_function import call_function
+# Import the model name from the config file.
+from config import GEMINI_MODEL
+
 
 def main():
 
@@ -37,14 +41,15 @@ def main():
     - List files and directories
     - Read the contents of a file
     - Write to a file (create or update)
-    - Run a python file 
+    - Run a python file
+    - Search the web for information
 
     When the user asks about the code project, they are refeering to the working directory.
     Start by looking at the project files and figuring out how to run the project and the tests.
     After every code edit, run the tests to ensure that the code is working as expected.
 
 
-    All paths you provide should be relative to the working directory. 
+    All paths you provide should be relative to the working directory.
     You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
     """
 
@@ -61,8 +66,8 @@ def main():
         verbose_flag = True
 
     # The user's prompt is the first command-line argument.
-    prompt = sys.argv[1]   
-    
+    prompt = sys.argv[1]
+
     # --- Conversation History ---
     # 'messages' stores the entire conversation history. It starts with the user's first prompt.
     # It will be appended with the AI's responses and the results of tool calls.
@@ -78,7 +83,8 @@ def main():
             schema_get_files_info,
             schema_get_file_contnet,
             schema_run_python_file,
-            schema_write_file
+            schema_write_file,
+            schema_web_search
         ]
     )
 
@@ -96,7 +102,7 @@ def main():
 
         # Send the conversation history and configuration to the Gemini model.
         response = client.models.generate_content(
-            model = 'gemini-1.5-pro-latest', # Using the recommended powerful model.
+            model = GEMINI_MODEL, # Using the model defined in config.py.
             contents = messages,
             config = config,
         )
@@ -117,7 +123,7 @@ def main():
                 if candidate is None or candidate.content is None:
                     continue
                 messages.append(candidate.content)
-                
+
         # --- Function Call Handling ---
         # Check if the AI's response includes a request to call a function.
         if response.function_calls:
@@ -126,7 +132,7 @@ def main():
                 result = call_function(function_call_part, verbose_flag)
                 # Append the function's result to the history so the AI knows what happened.
                 messages.append(result)
-                
+
         else:
             # If there are no function calls, it means the AI has its final answer.
             # Print the text response and exit the loop.

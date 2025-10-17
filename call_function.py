@@ -9,6 +9,7 @@ from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content
 from functions.run_python_file import run_python_file
 from functions.write_file import write_file
+from functions.web_search import web_search  # Import the new web_search function
 from google.genai import types
 
 # The working directory is set here to ensure all file operations are sandboxed.
@@ -50,6 +51,10 @@ def call_function(function_call_part, verbose = False):
 
     if function_call_part.name == "write_file":
         result = write_file(working_directory, **function_call_part.args)
+
+    # Add the new web_search function to the dispatcher
+    if function_call_part.name == "web_search":
+        result = web_search(**function_call_part.args)
 
     # --- Response Formatting ---
     # If no function matched, return an error.

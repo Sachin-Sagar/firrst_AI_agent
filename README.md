@@ -6,6 +6,7 @@ This project is a Python-based AI coding agent that can intelligently interact w
 
 ## ⭐ Key Features
 
+* **Web Searching**: The agent can search the web to find up-to-date information, like library documentation or error solutions.
 * **File and Directory Listing**: The agent can list the files and directories in your project, giving you a quick overview of your codebase.
 * **File Content Reading**: You can ask the agent to read the contents of a specific file, and it will return the content as a string.
 * **Safe File Writing**: The agent can write new code to a file or update existing ones.
@@ -44,8 +45,14 @@ To get started with the AI Coding Agent, you'll need to have Python 3.10 or high
 1.  Create a `.env` file in the root of the project.
 2.  Add your Gemini API key to the `.env` file:
     ```
-    GEMINI_API_KEY="your-api-key"
+    GEMINI_API_KEY="your-gemini-api-key"
+    GOOGLE_API_KEY="your-google-cloud-api-key"
+    SEARCH_ENGINE_ID="your-programmable-search-engine-id"
     ```
+
+    * **`GEMINI_API_KEY`**: For accessing the Gemini model.
+    * **`GOOGLE_API_KEY`**: For the Google Custom Search API. You can get this from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+    * **`SEARCH_ENGINE_ID`**: You can get this by creating a new search engine at the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
 
 ### Usage
 
@@ -63,8 +70,7 @@ You can also add the --verbose flag to see more detailed output, including the n
 Bash
 
 python main.py "Your prompt here" --verbose
-📂 Project Structure
-Here is a brief overview of the key files and directories in this project:
+📂 Project Structure Here is a brief overview of the key files and directories in this project:
 
 main.py: The main entry point for the AI agent. It manages the conversation loop with the Gemini API.
 
@@ -88,8 +94,7 @@ config.py: Contains global configuration variables.
 
 tests.py: Contains a simple test for the run_python_file function.
 
-🛡️ Backup and Change-log System
-To ensure that you can always track the agent's work and revert any changes if necessary, the write_file function has been enhanced with a robust backup and logging system.
+🛡️ Backup and Change-log System To ensure that you can always track the agent's work and revert any changes if necessary, the write_file function has been enhanced with a robust backup and logging system.
 
 When you ask the agent to modify an existing file, the following happens automatically:
 

@@ -8,3 +8,7 @@
 # This is a safeguard to prevent the program from loading excessively large files
 # into memory, which could cause performance issues or crashes.
 MAX_CHARACTERS = 10000
+
+# GEMINI_MODEL: Specifies the name of the Gemini model to be used by the agent.
+# Centralizing it here allows for easy updates or switching between models.
+GEMINI_MODEL = 'gemini-1.5-pro-latest'
