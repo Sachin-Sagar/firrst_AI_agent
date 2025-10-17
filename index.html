@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coding Agent - Project Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .section-title {
+            @apply text-3xl font-bold text-gray-800 mb-6 border-b-2 border-indigo-500 pb-2;
+        }
+        .card {
+            @apply bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300;
+        }
+        .list-item::before {
+            content: '✓';
+            @apply text-indigo-500 font-bold mr-2;
+        }
+        .improvement-item::before {
+            content: '➢';
+            @apply text-amber-500 font-bold mr-2;
+        }
+        .future-item::before {
+            content: '✨';
+            @apply text-teal-500 mr-2;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-700">
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <h1 class="text-4xl font-bold text-indigo-600">AI Coding Agent: Project Overview</h1>
+            <p class="mt-2 text-lg text-gray-600">An intelligent assistant designed to streamline development, improve code quality, and ensure project safety.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- How It Works Section -->
+        <section id="how-it-works">
+            <h2 class="section-title">How the Agent Works</h2>
+            <div class="card">
+                <p class="mb-6 text-lg">
+                    Think of the AI Coding Agent not as a simple chatbot, but as a proactive team member. It follows a structured, conversational process to understand a task, create a plan, and execute it step-by-step. The entire process is a loop of thought, action, and observation, which continues until the goal is achieved.
+                </p>
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Event Flow Diagram</h3>
+                <div class="flex justify-center p-4 bg-gray-100 rounded-lg">
+                    <!-- SVG Diagram -->
+                    <svg width="100%" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg" class="max-w-4xl">
+                        <!-- Definitions for markers -->
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#4F46E5" />
+                            </marker>
+                        </defs>
+
+                        <!-- Nodes -->
+                        <g id="nodes">
+                            <rect x="50" y="250" width="150" height="80" rx="10" fill="#E0E7FF" stroke="#6366F1" stroke-width="2"/>
+                            <text x="125" y="295" font-size="18" text-anchor="middle" font-weight="bold" fill="#3730A3">User</text>
+
+                            <rect x="275" y="250" width="150" height="80" rx="10" fill="#E0E7FF" stroke="#6366F1" stroke-width="2"/>
+                            <text x="350" y="285" font-size="18" text-anchor="middle" font-weight="bold" fill="#3730A3">AI Agent</text>
+                            <text x="350" y="310" font-size="14" text-anchor="middle" fill="#4338CA">(main.py)</text>
+
+                            <rect x="500" y="100" width="150" height="80" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="2"/>
+                            <text x="575" y="145" font-size="18" text-anchor="middle" font-weight="bold" fill="#047857">Gemini API</text>
+
+                            <rect x="725" y="250" width="150" height="80" rx="10" fill="#E0E7FF" stroke="#6366F1" stroke-width="2"/>
+                            <text x="800" y="285" font-size="18" text-anchor="middle" font-weight="bold" fill="#3730A3">Agent's Tools</text>
+                            <text x="800" y="310" font-size="14" text-anchor="middle" fill="#4338CA">(functions/)</text>
+
+                             <rect x="950" y="250" width="150" height="80" rx="10" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+                            <text x="1025" y="295" font-size="18" text-anchor="middle" font-weight="bold" fill="#B45309">File System</text>
+                        </g>
+
+                        <!-- Arrows and Labels -->
+                        <g id="arrows" font-size="14" fill="#4338CA">
+                            <!-- User to Agent -->
+                            <path d="M 205 290 H 270" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="210" y="280">1. "Refactor this file"</text>
+
+                            <!-- Agent to Gemini -->
+                            <path d="M 400 250 Q 450 160 500 140" stroke="#10B981" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+                            <text x="410" y="200">2. Send prompt & history</text>
+                            
+                            <!-- Gemini to Agent -->
+                            <path d="M 525 180 Q 450 220 400 250" stroke="#10B981" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+                            <text x="450" y="240" text-anchor="middle">3. Return Plan (e.g., "read file")</text>
+
+                            <!-- Agent to Tools -->
+                            <path d="M 430 290 H 720" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="550" y="280">4. Execute Tool</text>
+                            
+                             <!-- Tools to File System -->
+                            <path d="M 880 290 H 945" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="885" y="280" fill="#B45309">5. Interact</text>
+
+                            <!-- File System to Tools -->
+                            <path d="M 945 310 H 880" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="885" y="325" fill="#B45309">6. Get Result</text>
+
+                            <!-- Tools to Agent -->
+                            <path d="M 720 310 H 430" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow)"/>
+                            <text x="550" y="325">7. Return Result</text>
+                            
+                             <!-- Loop back to Gemini -->
+                            <text x="575" y="80" font-style="italic" text-anchor="middle">8. Agent sends result back to Gemini.</text>
+                            <text x="575" y="60" font-style="italic" text-anchor="middle">The loop (2-8) repeats until the task is complete.</text>
+
+                            <!-- Final response -->
+                             <path d="M 500 160 Q 300 150 150 250" stroke="#10B981" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+                             <text x="325" y="180">9. Final answer to User</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features and Improvements Section -->
+        <section id="features" class="mt-12">
+            <h2 class="section-title">Features & Future Roadmap</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                
+                <!-- Existing Features -->
+                <div class="card">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Existing Features</h3>
+                    <ul class="space-y-3">
+                        <li class="list-item"><strong>Autonomous File System Access:</strong> Can read, write, and list files to perform coding tasks directly.</li>
+                        <li class="list-item"><strong>Python Script Execution:</strong> Ability to run Python scripts to test code, run builds, or perform automated tasks.</li>
+                        <li class="list-item"><strong>Automated Backups:</strong> Automatically creates a timestamped backup of any file before modification, preventing data loss.</li>
+                        <li class="list-item"><strong>Comprehensive Change-logging:</strong> Generates a detailed log for every file change, explaining the reason and the implementation.</li>
+                        <li class="list-item"><strong>Security Sandbox:</strong> All file operations are constrained to the project's working directory to prevent unintended system access.</li>
+                    </ul>
+                </div>
+
+                <!-- Rooms for Improvement -->
+                <div class="card">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Potential Improvements</h3>
+                    <ul class="space-y-3">
+                        <li class="improvement-item"><strong>Interactive Mode:</strong> Implement a mode where the agent asks for confirmation from the user before executing critical steps like overwriting a file.</li>
+                        <li class="improvement-item"><strong>Cost & Token Tracking:</strong> Add a more robust system to monitor API costs and token usage for each task, helping to optimize prompts.</li>
+                        <li class="improvement-item"><strong>Enhanced Error Recovery:</strong> Improve the agent's ability to recover from errors. If a script fails, it could attempt to debug the issue based on the error message.</li>
+                         <li class="improvement-item"><strong>Refine Precedence Logic:</strong> The operator precedence in `calculator.py` is non-standard and could be updated to follow mathematical conventions more closely.</li>
+                    </ul>
+                </div>
+
+                <!-- Future Features -->
+                <div class="card">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Future Features</h3>
+                    <ul class="space-y-3">
+                        <li class="future-item"><strong>Version Control Integration:</strong> Allow the agent to interact with Git to create new branches, commit changes, and read commit history.</li>
+                        <li class="future-item"><strong>Web Searching Capability:</strong> Grant the agent the ability to search the web for documentation, library updates, or solutions to complex errors.</li>
+                        <li class="future-item"><strong>Multi-Agent Collaboration:</strong> Develop a system where specialized agents (e.g., a "Testing Agent" and a "Refactoring Agent") can collaborate on a single task.</li>
+                        <li class="future-item"><strong>User Interface (UI):</strong> Build a simple web-based UI to interact with the agent instead of using the command line, making it accessible to more users.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-12 py-6 border-t">
+        <div class="container mx-auto text-center text-gray-500">
+            <p>&copy; 2025 AI Coding Agent Project. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

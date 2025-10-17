@@ -1,125 +1,106 @@
-AI Coding Agent
-This project is a Python-based AI coding agent that can interact with your file system. It's designed to help you with various coding tasks by understanding your requests and performing actions like listing files, reading and writing code, and even running Python scripts. The agent is powered by Google's Gemini API.
+# AI Coding Agent
 
-Overview
-The AI Coding Agent is a command-line tool that takes a prompt from the user and uses the Gemini API to determine the best course of action. It can perform a variety of file-based operations, making it a versatile and helpful tool for any developer.
+This project is a Python-based AI coding agent that can intelligently interact with your file system. It is designed to be a powerful and safe assistant for developers, capable of understanding requests, performing actions like reading and writing code, and executing Python scripts, all while maintaining a secure and transparent record of its changes.
 
-The agent is designed to be extensible, so you can easily add new functions and capabilities to suit your needs. It also includes a simple calculator module as an example of a self-contained sub-project that the agent can interact with.
+---
 
-Features
-File and Directory Listing: The agent can list the files and directories in your project, giving you a quick overview of your codebase.
+## ⭐ Key Features
 
-File Content Reading: You can ask the agent to read the contents of a specific file, and it will return the content as a string.
+* **File and Directory Listing**: The agent can list the files and directories in your project, giving you a quick overview of your codebase.
+* **File Content Reading**: You can ask the agent to read the contents of a specific file, and it will return the content as a string.
+* **Safe File Writing**: The agent can write new code to a file or update existing ones.
+* **Automated Backups and Change-logs**: This is a critical safety feature. Before the agent overwrites any existing file, it automatically:
+    1.  Creates a timestamped backup of the original file in a `backups/` directory.
+    2.  Generates a detailed change-log in Markdown format, which includes the initial prompt, the agent's plan, and the rationale behind the changes.
+    3.  Saves this change-log to the `backups/` directory with a corresponding timestamp.
+* **Python Script Execution**: One of the most powerful features of the agent is its ability to run Python scripts and capture their output, allowing you to test code on the fly.
+* **Extensible Function Set**: The agent's capabilities are defined in the `functions/` directory. You can easily add new Python scripts to this directory to extend the agent's functionality.
+* **Pre-built Calculator**: The project comes with a pre-built command-line calculator as an example of a self-contained sub-project that the agent can interact with.
 
-File Writing: The agent can write new code to a file or update existing ones. It can even create new directories if they don't exist.
+---
 
-Python Script Execution: One of the most powerful features of the agent is its ability to run Python scripts. This allows you to test your code, run scripts, and see the output in real-time.
+## 🚀 Getting Started
 
-Extensible Function Set: The agent's capabilities are defined in the functions directory. You can easily add new Python scripts to this directory to extend the agent's functionality.
-
-Pre-built Calculator: The project comes with a pre-built command-line calculator that can evaluate mathematical expressions.
-
-Project Structure
-Here is a brief overview of the key files and directories in this project:
-
-main.py: This is the main entry point for the AI agent. It takes a user's prompt, interacts with the Gemini API, and orchestrates the function calls.
-
-call_function.py: This module is responsible for calling the appropriate function based on the name of the function returned by the AI.
-
-functions/: This directory contains all the functions that the AI agent can call.
-
-get_files_info.py: Lists the files in a specified directory.
-
-get_file_content.py: Reads the content of a given file.
-
-write_file.py: Writes content to a specified file.
-
-run_python_file.py: Executes a Python file and returns its output.
-
-calculator/: This directory contains a simple command-line calculator.
-
-main.py: The main entry point for the calculator.
-
-pkg/calculator.py: The Calculator class, which handles the evaluation of mathematical expressions.
-
-pkg/render.py: A helper function to format the calculator's output as a JSON string.
-
-tests.py: Unit tests for the calculator.
-
-config.py: This file contains configuration variables, such as the maximum number of characters to read from a file.
-
-tests.py: This file contains a simple test for the run_python_file function.
-
-Getting Started
 To get started with the AI Coding Agent, you'll need to have Python 3.10 or higher installed.
 
-Installation
-Clone the repository:
+### Installation
 
-Bash
+1.  **Clone the repository**:
+    ```bash
+    git clone <repository-url>
+    ```
+2.  **Navigate to the project directory**:
+    ```bash
+    cd first_ai_agent
+    ```
+3.  **Install the required dependencies**:
+    Make sure your `pyproject.toml` file includes all the necessary dependencies, then run:
+    ```bash
+    pip install -e .
+    ```
 
-git clone <repository-url>
-Navigate to the project directory:
+### Configuration
 
-Bash
+1.  Create a `.env` file in the root of the project.
+2.  Add your Gemini API key to the `.env` file:
+    ```
+    GEMINI_API_KEY="your-api-key"
+    ```
 
-cd first_ai_agent
-Install the required dependencies:
+### Usage
 
-Bash
-
-pip install -r requirements.txt
-Note: You may need to create a requirements.txt file first. Based on the imports, you'll need google-generativeai and python-dotenv.
-
-Configuration
-Create a .env file in the root of the project.
-
-Add your Gemini API key to the .env file:
-
-GEMINI_API_KEY="your-api-key"
-Usage
 You can run the AI agent from the command line by passing a prompt as an argument:
 
-Bash
-
+```bash
 python main.py "Your prompt here"
-For example, to list all the files in the current directory, you would run:
+For example, to ask the agent to refactor a file, you would run:
 
 Bash
 
-python main.py "List all the files in the project"
+python main.py "Refactor the 'calculator.py' file to improve its readability."
 You can also add the --verbose flag to see more detailed output, including the number of tokens used for the prompt and response:
 
 Bash
 
 python main.py "Your prompt here" --verbose
-Calculator Module
-The calculator/ directory contains a simple command-line calculator that the AI agent can interact with.
+📂 Project Structure
+Here is a brief overview of the key files and directories in this project:
 
-How to Run the Calculator
-You can run the calculator directly from the command line:
+main.py: The main entry point for the AI agent. It manages the conversation loop with the Gemini API.
 
-Bash
+call_function.py: A dispatcher that calls the appropriate Python function based on the AI's request.
 
-python calculator/main.py "3 + 5"
-This will output the result in JSON format:
+functions/: This directory contains all the functions that the AI agent can call.
 
-JSON
+write_file.py: Writes content to a specified file, and now includes the logic for creating backups and saving change-logs.
 
-{
-  "expression": "3 + 5",
-  "result": 8
-}
-The calculator supports addition, subtraction, multiplication, and division. It can also handle more complex expressions with multiple operators.
+get_files_info.py: Lists the files in a specified directory.
 
-Testing
-The project includes a tests.py file in the root directory that you can use to test the run_python_file function. To run the test, simply execute the file:
+get_file_content.py: Reads the content of a given file.
 
-Bash
+run_python_file.py: Executes a Python file and returns its output.
 
-python tests.py
-The calculator/ directory also has its own tests.py file for testing the calculator's functionality. To run these tests, you can use the unittest module:
+backups/: This directory is automatically created and will store all file backups and change-logs generated by the agent.
 
-Bash
+calculator/: A self-contained command-line calculator module.
 
-python -m unittest calculator/tests.py
+config.py: Contains global configuration variables.
+
+tests.py: Contains a simple test for the run_python_file function.
+
+🛡️ Backup and Change-log System
+To ensure that you can always track the agent's work and revert any changes if necessary, the write_file function has been enhanced with a robust backup and logging system.
+
+When you ask the agent to modify an existing file, the following happens automatically:
+
+A copy of the original file is saved to the backups/ directory with a timestamp. For example, calculator.py would be saved as calculator.py_20231027_154501.bak.
+
+The agent generates a change-log that includes:
+
+The initial prompt from the user.
+
+The agent's step-by-step plan.
+
+A detailed explanation of the code changes and the reasoning behind them.
+
+This log is saved as a Markdown file in the backups/ directory, with a matching timestamp (e.g., changelog_calculator.py_20231027_154501.md).
