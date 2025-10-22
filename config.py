@@ -4,6 +4,8 @@
 # Centralizing them here makes it easy to change key values without
 # having to search through multiple files.
 
+import os 
+
 # --- REMOVED IMPORT TO BREAK CYCLE ---
 # from tool_registry import TOOL_DESCRIPTIONS
 
@@ -14,10 +16,23 @@ MAX_CHARACTERS = 10000
 
 # --- API Configuration ---
 
-# GROQ_MODEL: Specifies the name of the Groq model to be used by the agent.
-# Using a fast, free model like Llama 3.1 8B is a good choice.
-#GROQ_MODEL = 'llama-3.1-8b-instant'
-GROQ_MODEL = 'llama-3.3-70b-versatile'
+# --- NEW: LLM Provider Switch ---
+# This variable reads from your .env file to decide which LLM to use.
+# Set LLM_PROVIDER="groq" or LLM_PROVIDER="cerebras" in your .env file.
+# Defaults to "groq" if not set.
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "cerebras").lower()
+
+# --- MODEL CORRECTION ---
+# GROQ_MODEL: Reverting to the 70B model from your original file.
+# 'llama-3.1-70b-instant' caused a 404 error.
+GROQ_MODEL = 'llama-3.3-70b-versatile' 
+
+# --- MODEL UPGRADE ---
+# CEREBRAS_MODEL: Using a 70B model for better instruction following.
+CEREBRAS_MODEL = 'llama-3.1-70b-instruct'
+# This is the required base_url for their OpenAI-compatible API.
+CEREBRAS_API_BASE = "https://api.cerebras.ai/v1"
+
 
 # --- Agent Configuration ---
 
@@ -48,6 +63,12 @@ YOU HAVE ACCESS TO THE FOLLOWING TOOLS:
 - **Example:** If asked to change operator precedence (e.g., make '3 + 4 * 2' = 14), DO NOT hard-code a fix with an `if` statement. The CORRECT solution is to modify the `self.precedence` dictionary in `pkg/calculator.py` (e.g., set `"+": 2, "*": 1`).
 - Always run tests or the main script to confirm your changes. The runnable script is `main.py`. The unit tests are in `tests.py`.
 
+**CRITICAL INSTRUCTION: HOW TO REPORT SCRIPT RESULTS**
+- When a tool call to `run_python_file` is successful, its STDOUT will be returned to you.
+- You MUST inspect this STDOUT. If it contains JSON with a "result" (like the calculator does), your final answer MUST state this result clearly.
+- **BAD ANSWER:** "The script ran successfully."
+- **GOOD ANSWER:** "The script ran successfully. The result of the calculation '2 * 3 + 5' is 11."
+
 **CRITICAL INSTRUCTION: HOW TO RESPOND WHEN USING A TOOL**
 
 When you need to call a tool, your single response MUST have two separate parts:
@@ -56,9 +77,9 @@ When you need to call a tool, your single response MUST have two separate parts:
 
 **CRITICAL FAILURE:**
 DO NOT, under any circumstances, write the tool call inside the `content` field.
-The system will crash if you write `<function=...` or any text other than your `<thought>...</thought>` block in the `content`.
+The system will crash if you write `<function=...` or any text other than your `` block in the `content`.
 
-**EXAMPLE OF A CORRECT RESPONSE:**
+EXAMPLE OF A CORRECT RESPONSE:
 
 **Your `content` field should be:**
 ``
@@ -66,10 +87,10 @@ The system will crash if you write `<function=...` or any text other than your `
 **Your `tool_calls` field should (separately) contain:**
 `[ {{ "type": "function", "function": {{ "name": "get_file_content", "arguments": "{{\\"file_path\\": \\"pkg/calculator.py\\"}}" }} }} ]`
 
-Just generate the thought in `content` and the tool call in `tool_calls`. Do not mix them.
+Just generate the in `content` and the tool call in `tool_calls`. Do not mix them.
 """
 
-# --- NEW: Planner Prompt Template ---
+# --- Planner Prompt Template ---
 # PLANNER_SYSTEM_PROMPT_TEMPLATE: This prompt is used for the "Planning Phase"
 # where the model is not allowed to use any tools.
 PLANNER_SYSTEM_PROMPT_TEMPLATE = """
@@ -79,6 +100,18 @@ The user will give you a task. Your ONLY job is to create a clear, step-by-step 
 Your "working directory" is `calculator/`.
 **CRITICAL INSTRUCTION:** All file paths in your plan MUST be relative to this directory.
 **DO NOT** include `calculator/` in any file paths.
+
+**CRITICAL INSTRUCTION: HOW TO HANDLE PATHS**
+- The user might provide paths like `/pkg` or `calculator/pkg`. You MUST correct these to be relative.
+- **CORRECT PLAN:** `get_files_info("pkg")`
+- **INCORRECT PLAN:** `get_files_info("/pkg")`
+- **INCORRECT PLAN:** `get_files_info("calculator/pkg")`
+
+**CRITICAL INSTRUCTION: HOW TO RUN THE CALCULATOR**
+- The ONLY runnable script for the calculator is `main.py`.
+- The core logic is in `pkg/calculator.py`, but it **CANNOT BE RUN** directly.
+- **If the user asks to *use* or *run* the calculator (e.g., "compute 3 + 5"), your ONLY plan should be to use `run_python_file('main.py', ...)`**
+- Example: For "compute 3 + 5", the plan is to call `run_python_file('main.py', ['3', '+', '5'])`.
 
 - **Runnable Script:** The main CLI script is `main.py`.
 - **Core Logic File:** The calculator's class and logic is in `pkg/calculator.py`.

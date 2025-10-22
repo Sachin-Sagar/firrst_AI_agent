@@ -9,7 +9,8 @@ dependencies = [
     "python-dotenv",
     "google-cloud-aiplatform",
     "google-api-python-client", 
-    "groq", # Add this line
+    "groq",
+    "openai", # <-- ADDED: Required for Cerebras's OpenAI-compatible API
 ]
 
 [tool.setuptools]

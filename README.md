@@ -1,134 +1,124 @@
 AI Coding Agent
 
-This project is a Python-based AI coding agent powered by the Groq API and Llama 3.1. It is designed to be a powerful and safe assistant for developers, capable of intelligently interacting with your file system. It follows a "Plan-then-Execute" model to first create a detailed plan and then execute it step-by-step.
+This project is a Python-based AI coding agent powered by multiple LLM APIs. It is designed to be a powerful and safe assistant for developers, capable of intelligently interacting with your file system. It follows a "Plan-then-Execute" model to first create a detailed plan and then execute it step-by-step.
 
 The agent can perform actions like reading and writing code, listing directory contents, running Python scripts, and searching the web, all while maintaining a secure and transparent record of its actions.
 
 ⭐ Key Features
 
-    ⚡ Blazing Fast: Uses the Groq API for near-instantaneous model responses.
+    ⚡ **Multi-Provider LLM Support**: Flexibly switch between LLM providers. Currently supports:
+        - **Groq API**: Near-instantaneous model responses via Groq's LPU architecture.
+        - **Cerebras API**: Access to Cerebras models via their OpenAI-compatible endpoint.
 
-    🧠 Plan-then-Execute Model: The agent first analyzes the user's request to create a step-by-step plan (without using tools), then follows that plan in an execution phase, leading to more robust and logical outcomes.
+    🧠 **Plan-then-Execute Model**: The agent first analyzes the user's request to create a step-by-step plan (without using tools), then follows that plan in an execution phase, leading to more robust and logical outcomes.
 
-    📂 File System Access: Can read, write, and list files to perform coding tasks directly.
+    📂 **File System Access**: Can read, write, and list files to perform coding tasks directly.
 
-    🤖 Script Execution: Ability to run Python scripts (e.g., running tests, builds) and analyze their STDOUT and STDERR.
+    🤖 **Script Execution**: Ability to run Python scripts (e.g., running tests, builds) and analyze their STDOUT and STDERR.
 
-    🌐 Web Searching: Can search the web using the Google Custom Search API to find documentation, install guides, or error solutions.
+    🌐 **Web Searching**: Can search the web using the Google Custom Search API to find documentation, install guides, or error solutions.
 
-    🛡️ Safe & Secure:
+    🛡️ **Safe & Secure**:
+        - **Sandboxed**: All file operations are constrained to a specific working directory (`calculator/` by default).
+        - **Automated Backups**: Automatically creates a timestamped backup of any file before modification.
+        - **Change-logs**: Saves an accompanying change-log file for any modifications.
 
-        Sandboxed: All file operations are constrained to a specific working directory (calculator/ by default).
+    📝 **Comprehensive Logging**: Every agent run—including the initial prompt, the generated plan, all model thoughts, function calls, and results—is saved to a timestamped file in the `logs/` directory.
 
-        Automated Backups: Automatically creates a timestamped backup of any file before modification.
-
-        Change-logs: Saves an accompanying change-log file for any modifications.
-
-    📝 Comprehensive Logging: Every agent run—including the initial prompt, the generated plan, all model thoughts, function calls, and results—is saved to a timestamped file in the logs/ directory.
-
-    🔧 Easily Extensible: Designed with a clean "registry" pattern. Adding new tools is as simple as creating a function and adding it to tool_registry.py.
+    🔧 **Easily Extensible**: Designed with a clean "registry" pattern. Adding new tools is as simple as creating a function and adding it to `tool_registry.py`.
 
 🏛️ How it Works: Plan-then-Execute
 
-This agent operates in two distinct phases, managed by main.py:
+This agent operates in two distinct phases, managed by `main.py`:
 
-1. Planning Phase
+1.  **Planning Phase**
+    * The user runs `main.py` with a prompt.
+    * `main.py` sends this prompt to the selected LLM API (Groq or Cerebras) using a special `PLANNER_SYSTEM_PROMPT_TEMPLATE`.
+    * In this phase, the agent has **no tools enabled**. Its only job is to think and produce a step-by-step plan to solve the user's task.
+    * The agent's plan is logged and printed to the console.
 
-    The user runs main.py with a prompt.
-
-    main.py sends this prompt to the Groq API using a special Planner System Prompt (PLANNER_SYSTEM_PROMPT_TEMPLATE).
-
-    In this phase, the agent has no tools enabled. Its only job is to think and produce a step-by-step plan to solve the user's task.
-
-    The agent's plan is logged and printed to the console.
-
-2. Execution Phase
-
-    main.py initializes a new conversation history. This history includes the main Executor System Prompt (SYSTEM_PROMPT_TEMPLATE), the original user prompt, and the plan the agent just created.
-
-    main.py gets the complete list of available tools from tool_registry.py.
-
-    The agent now enters a loop, instructed to follow its own plan.
-
-    When the agent needs to act, it sends a tool_call request.
-
-    main.py passes the tool_call to call_function.py, which uses tool_registry.py to find and execute the correct function.
-
-    The function's result (e.g., file content, or a script's output) is appended to the history and sent back to the Groq API.
-
-    This loop (think, act, observe) continues until the agent determines the plan is complete and provides a final answer.
+2.  **Execution Phase**
+    * `main.py` initializes a new conversation history. This history includes the main `SYSTEM_PROMPT_TEMPLATE`, the original user prompt, and the plan the agent just created.
+    * `main.py` gets the complete list of available tools from `tool_registry.py`.
+    * The agent now enters a loop, instructed to follow its own plan.
+    * When the agent needs to act, it sends a `tool_call` request.
+    * `main.py` passes the `tool_call` to `call_function.py`, which uses `tool_registry.py` to find and execute the correct function.
+    * The function's result (e.g., file content, or a script's output) is appended to the history and sent back to the LLM API.
+    * This loop (think, act, observe) continues until the agent determines the plan is complete and provides a final answer.
 
 🚀 Getting Started
 
-1. Prerequisites
+1.  **Prerequisites**
+    * Python 3.10 or higher.
 
-    Python 3.10 or higher.
+2.  **Installation**
+    * Clone the repository:
+        ```bash
+        git clone <repository-url>
+        ```
+    * Navigate to the project directory:
+        ```bash
+        cd first_ai_agent
+        ```
+    * Install the required dependencies: We recommend using a virtual environment.
+        ```bash
+        # Create and activate a virtual environment
+        python3 -m venv .venv
+        source .venv/bin/activate
+        
+        # Install dependencies from pyproject.toml
+        pip install -e .
+        ```
 
-2. Installation
+3.  **Configuration**
+    * Create a `.env` file in the root of the project.
+    * Add your API keys and select your provider in the `.env` file:
 
-    Clone the repository:
-    Bash
+        ```dotenv
+        # --- Provider Selection (REQUIRED) ---
+        # Choose your LLM provider. Must be "groq" or "cerebras".
+        # Defaults to "groq" if not set.
+        LLM_PROVIDER="groq"
+        
+        # --- Groq API Key (REQUIRED if LLM_PROVIDER="groq") ---
+        GROQ_API_KEY="your-groq-api-key"
+        
+        # --- Cerebras API Key (REQUIRED if LLM_PROVIDER="cerebras") ---
+        CEREBRAS_API_KEY="your-cerebras-api-key"
+        
+        # --- Optional (for Web Search tool) ---
+        GOOGLE_API_KEY="your-google-cloud-api-key"
+        SEARCH_ENGINE_ID="your-programmable-search-engine-id"
+        ```
 
-git clone <repository-url>
+        * `GROQ_API_KEY`: Get this from the [Groq Console](https://console.groq.com/).
+        * `CEREBRAS_API_KEY`: Get this from the [Cerebras Developer Portal](https://inference-docs.cerebras.ai/quickstart).
+        * `GOOGLE_API_KEY`: Required for the `web_search` tool. Get this from the Google Cloud Console.
+        * `SEARCH_ENGINE_ID`: Required for the `web_search` tool. Get this from the Programmable Search Engine control panel.
 
-Navigate to the project directory:
-Bash
-
-cd first_ai_agent
-
-Install the required dependencies: We recommend using a virtual environment.
-Bash
-
-    # Create and activate a virtual environment
-    python3 -m venv .venv
-    source .venv/bin/activate
-
-    # Install dependencies from pyproject.toml
-    pip install -e .
-
-3. Configuration
-
-    Create a .env file in the root of the project.
-
-    Add your API keys to the .env file:
-
-    # --- Required ---
-    GROQ_API_KEY="your-groq-api-key"
-
-    # --- Optional (for Web Search tool) ---
-    GOOGLE_API_KEY="your-google-cloud-api-key"
-    SEARCH_ENGINE_ID="your-programmable-search-engine-id"
-
-        GROQ_API_KEY: Get this from the Groq Console.
-
-        GOOGLE_API_KEY: Required for the web_search tool. Get this from the Google Cloud Console.
-
-        SEARCH_ENGINE_ID: Required for the web_search tool. Get this from the Programmable Search Engine control panel.
-
-4. Dependencies
-
-This project's dependencies are managed in pyproject.toml. The core requirements are:
-Ini, TOML
-
-[project]
-name = "agent-tst"
-version = "0.1.0"
-...
-requires-python = ">=3.10"
-dependencies = [
-    # Note: google-generativeai and google-cloud-aiplatform are NOT used
-    "python-dotenv",
-    "google-api-python-client", # For Google Custom Search API
-    "groq",                     # For the Groq LLM API
-]
+4.  **Dependencies**
+    This project's dependencies are managed in `pyproject.toml`. The core requirements are:
+    ```toml
+    [project]
+    name = "agent-tst"
+    version = "0.1.0"
+    ...
+    requires-python = ">=3.10"
+    dependencies = [
+        # Note: google-generativeai and google-cloud-aiplatform are NOT used
+        "python-dotenv",
+        "google-api-python-client", # For Google Custom Search API
+        "groq",                     # For the Groq LLM API
+        "openai",                   # For Cerebras (OpenAI-compatible) API
+    ]
+    ```
 
 🛠️ Usage & Tools
 
-Running the Agent
+**Running the Agent**
 
 You can run the AI agent from the command line by passing a prompt as an argument:
-Bash
-
+```bash
 python main.py "Your prompt here"
 
 # Example:
@@ -166,13 +156,13 @@ python calculator/tests.py
 
 ⚙️ Project Architecture
 
-    main.py: The main entry point. Manages the Plan-then-Execute loop, API calls, and conversation history.
+    main.py: The main entry point. Reads the LLM_PROVIDER config, initializes the correct client, and manages the Plan-then-Execute loop.
 
     call_function.py: The central dispatcher. main.py passes all tool_call requests here for execution.
 
     tool_registry.py: The "switchboard" for all tools. It imports all tool functions and their schemas, maps them by name, and injects the working_directory.
 
-    config.py: Centralized configuration. Stores the Groq model name (GROQ_MODEL) and the system prompt templates.
+    config.py: Centralized configuration. Stores API settings (like CEREBRAS_API_BASE), model names, and the system prompt templates.
 
     logger_config.py: A simple module that sets up the timestamped file logging and verbose console logging.
 
@@ -186,9 +176,8 @@ python calculator/tests.py
 
 🔧 How to Add a New Tool
 
-    Create the Tool Function: Create a new file in functions/my_new_tool.py.
-    Python
-
+1. Create the Tool Function: Create a new file in functions/my_new_tool.py.
+```python
 # functions/my_new_tool.py
 
 def my_new_tool(some_argument: str):
@@ -217,10 +206,10 @@ schema_my_new_tool = {
         }
     }
 }
+```
 
-Register the Tool: Open tool_registry.py and make two changes:
-Python
-
+2. Register the Tool: Open tool_registry.py and make two changes:
+```python
 # tool_registry.py
 
 # ... other imports
@@ -253,3 +242,44 @@ TOOL_DESCRIPTIONS = """
 """
 
 # ... rest of the file
+```
+
+
+**What was changed:**
+
+* I updated the main description to mention "multiple LLM APIs".
+* I rewrote the first "Feature" to highlight the new **Multi-Provider LLM Support** for Groq and Cerebras.
+* I updated the "How it Works" section to clarify that `main.py` sends the prompt to the *selected LLM API*.
+* I completely rewrote the "Configuration" section to give clear instructions for the `.env` file, explaining the new `LLM_PROVIDER` switch and where to put both the `GROQ_API_KEY` and `CEREBRAS_API_KEY`.
+* I updated the "Dependencies" section to show the new `pyproject.toml` list, which now includes `openai`.
+* I updated the "Project Architecture" section to explain `main.py`'s and `config.py`'s new roles.
+
+---
+
+### Final Step: Your `.env` file (No File Generated)
+
+This is the last step. You need to **create or edit your `.env` file** in the root of your project to look like this.
+
+```dotenv
+# --- Provider Selection (REQUIRED) ---
+# Choose your LLM provider. Must be "groq" or "cerebras".
+# Defaults to "groq" if not set.
+LLM_PROVIDER="groq"
+
+# --- Groq API Key (REQUIRED if LLM_PROVIDER="groq") ---
+GROQ_API_KEY="your-groq-api-key-here"
+
+# --- Cerebras API Key (REQUIRED if LLM_PROVIDER="cerebras") ---
+CEREBRAS_API_KEY="your-cerebras-api-key-here"
+
+# --- Optional (for Web Search tool) ---
+GOOGLE_API_KEY="your-google-cloud-api-key"
+SEARCH_ENGINE_ID="your-programmable-search-engine-id"
+
+What to do:
+
+    Make sure you have run pip install -e . (or your install command) to install the openai library we added to pyproject.toml.
+
+    Get your API key from Cerebras and paste it into CEREBRAS_API_KEY.
+
+    Set LLM_PROVIDER="cerebras" to test the new connection, or set it to LLM_PROVIDER="groq" to use the original.
