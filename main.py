@@ -141,10 +141,13 @@ def main():
             # --- Function Call Handling ---
             if response_message.tool_calls:
                 for tool_call in response_message.tool_calls:
-                    # --- Status message for tool call ---
-                    print(f"🛠️  Calling tool: {tool_call.function.name}({tool_call.function.arguments})")
+                    
+                    # --- THIS LINE WAS REMOVED ---
+                    # print(f"🛠️  Calling tool: {tool_call.function.name}({tool_call.function.arguments})")
+                    # --- END OF REMOVAL ---
 
                     # Delegate the entire tool call to our dispatcher
+                    # call_function.py already logs this call, honoring the --verbose flag
                     tool_result_message = call_function(tool_call)
                     
                     # Append the tool's result to the message history
