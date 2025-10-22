@@ -104,7 +104,9 @@ def main():
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT}, # Use the formatted executor prompt
         {"role": "user", "content": prompt},
-        {"role": "assistant", "content": plan_text} # The plan it just created
+        {"role": "assistant", "content": plan_text}, # The plan it just created
+        # This new message prompts the model to start the *first step* of its plan.
+        {"role": "user", "content": "Great, please proceed with the first step of your plan."}
     ]
 
     # --- Tool Configuration ---

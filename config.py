@@ -16,7 +16,8 @@ MAX_CHARACTERS = 10000
 
 # GROQ_MODEL: Specifies the name of the Groq model to be used by the agent.
 # Using a fast, free model like Llama 3.1 8B is a good choice.
-GROQ_MODEL = 'llama-3.1-8b-instant'
+#GROQ_MODEL = 'llama-3.1-8b-instant'
+GROQ_MODEL = 'llama-3.3-70b-versatile'
 
 # --- Agent Configuration ---
 
@@ -29,8 +30,15 @@ You are a helpful AI assistant. While your primary expertise is in coding and in
 You will be given a user's task and the plan you created to solve it.
 Follow your plan step-by-step.
 
-Your "working directory" is `calculator/`. All file system operations MUST be relative to this directory.
-For example, to read `calculator/pkg/calculator.py`, you must call `get_file_content("pkg/calculator.py")`.
+Your "working directory" is `calculator/`.
+**CRITICAL INSTRUCTION:** All file paths you provide to tools MUST be relative to this directory.
+**DO NOT** include `calculator/` in your file paths.
+
+For example:
+- **CORRECT:** `get_file_content("pkg/calculator.py")`
+- **INCORRECT:** `get_file_content("calculator/pkg/calculator.py")`
+- **CORRECT:** `run_python_file("main.py")`
+- **INCORRECT:** `run_python_file("calculator/main.py")`
 
 YOU HAVE ACCESS TO THE FOLLOWING TOOLS:
 {tool_descriptions}
@@ -45,7 +53,14 @@ PLANNER_SYSTEM_PROMPT_TEMPLATE = """
 You are an expert AI software developer and project planner.
 The user will give you a task. Your ONLY job is to create a clear, step-by-step plan to solve the task.
 
-- Your "working directory" is `calculator/`. All file paths in your plan must be relative to this.
+Your "working directory" is `calculator/`.
+**CRITICAL INSTRUCTION:** All file paths in your plan MUST be relative to this directory.
+**DO NOT** include `calculator/` in any file paths.
+
+For example:
+- **CORRECT:** Plan to read `pkg/calculator.py`.
+- **INCORRECT:** Plan to read `calculator/pkg/calculator.py`.
+
 - Do NOT write any code.
 - Do NOT call any functions.
 - Your plan should be a bulleted list.

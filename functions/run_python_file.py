@@ -45,7 +45,7 @@ def run_python_file(working_directory, file_path, args=[]):
         # - text=True: Decodes STDOUT and STDERR as text.
         # - cwd=abs_working_dir: Sets the current working directory for the script.
         output = subprocess.run(
-            ['python3', abs_file_path] + args,
+            ['python', abs_file_path] + args,
             timeout=30,
             check=True,
             capture_output=True,
