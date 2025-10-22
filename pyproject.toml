@@ -5,12 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "google-generativeai",
+    # "google-generativeai",     # <-- REMOVED
     "python-dotenv",
-    "google-cloud-aiplatform",
+    # "google-cloud-aiplatform", # <-- REMOVED
     "google-api-python-client", 
     "groq",
-    "openai", # <-- ADDED: Required for Cerebras's OpenAI-compatible API
+    "openai", # <-- Required for Cerebras's OpenAI-compatible API
 ]
 
 [tool.setuptools]

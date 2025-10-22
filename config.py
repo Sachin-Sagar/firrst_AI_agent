@@ -16,20 +16,20 @@ MAX_CHARACTERS = 10000
 
 # --- API Configuration ---
 
-# --- NEW: LLM Provider Switch ---
+# --- LLM Provider Switch ---
 # This variable reads from your .env file to decide which LLM to use.
-# Set LLM_PROVIDER="groq" or LLM_PROVIDER="cerebras" in your .env file.
-# Defaults to "groq" if not set.
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "cerebras").lower()
+# The default fallback is "groq".
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq").lower()
 
-# --- MODEL CORRECTION ---
-# GROQ_MODEL: Reverting to the 70B model from your original file.
-# 'llama-3.1-70b-instant' caused a 404 error.
+# --- MODEL NAMES ---
+
+# GROQ_MODEL: The stable Llama 3.3 70B model.
 GROQ_MODEL = 'llama-3.3-70b-versatile' 
 
-# --- MODEL UPGRADE ---
-# CEREBRAS_MODEL: Using a 70B model for better instruction following.
-CEREBRAS_MODEL = 'llama-3.1-70b-instruct'
+# CEREBRAS_MODEL: The stable Llama 3.3 70B model.
+CEREBRAS_MODEL = 'llama-3.3-70b'
+# CEREBRAS_MODEL = 'llama3.1-8b' # You can switch to this 8B model if preferred
+
 # This is the required base_url for their OpenAI-compatible API.
 CEREBRAS_API_BASE = "https://api.cerebras.ai/v1"
 
@@ -52,16 +52,19 @@ Your "working directory" is `calculator/`.
 For example:
 - **CORRECT:** `get_file_content("pkg/calculator.py")`
 - **INCORRECT:** `get_file_content("calculator/pkg/calculator.py")`
-- **CORRECT:** `run_python_file("main.py", ["1 + 2"])`
+- **CORRECT:** `run_python_file("main.py", ["1", "+", "2"])`
 - **INCORRECT:** `run_python_file("calculator/main.py", ["1 + 2"])`
 
 YOU HAVE ACCESS TO THE FOLLOWING TOOLS:
 {tool_descriptions}
 
-**CRITICAL INSTRUCTION: HOW TO SOLVE PROBLEMS**
-- When asked to modify code, always choose the most robust solution.
-- **Example:** If asked to change operator precedence (e.g., make '3 + 4 * 2' = 14), DO NOT hard-code a fix with an `if` statement. The CORRECT solution is to modify the `self.precedence` dictionary in `pkg/calculator.py` (e.g., set `"+": 2, "*": 1`).
-- Always run tests or the main script to confirm your changes. The runnable script is `main.py`. The unit tests are in `tests.py`.
+**CRITICAL INSTRUCTION: HOW TO EXECUTE YOUR PLAN**
+- Your job is to *execute* your plan, not just repeat it.
+- When it is time to use a tool, you MUST use the `tool_calls` format.
+- DO NOT output JSON in your `content` field. Your `content` field MUST ONLY contain your `<thought>` process.
+- If your plan is to "run the calculator," you must call the `run_python_file` tool.
+- **FAILURE:** Do not respond with a final answer that just contains a JSON blob. That is not executing the plan.
+- **SUCCESS:** Respond with a `<thought>` in the `content` field and a valid `tool_calls` entry.
 
 **CRITICAL INSTRUCTION: HOW TO REPORT SCRIPT RESULTS**
 - When a tool call to `run_python_file` is successful, its STDOUT will be returned to you.
@@ -75,19 +78,10 @@ When you need to call a tool, your single response MUST have two separate parts:
 1.  **`content`:** This field *must contain only* your chain of thought, enclosed in `<thought>` tags.
 2.  **`tool_calls`:** This (separate) field *must contain* the JSON for the tool call.
 
-**CRITICAL FAILURE:**
-DO NOT, under any circumstances, write the tool call inside the `content` field.
-The system will crash if you write `<function=...` or any text other than your `` block in the `content`.
-
 EXAMPLE OF A CORRECT RESPONSE:
 
 **Your `content` field should be:**
-``
-
-**Your `tool_calls` field should (separately) contain:**
-`[ {{ "type": "function", "function": {{ "name": "get_file_content", "arguments": "{{\\"file_path\\": \\"pkg/calculator.py\\"}}" }} }} ]`
-
-Just generate the in `content` and the tool call in `tool_calls`. Do not mix them.
+`` in `content` and the tool call in `tool_calls`. Do not mix them.
 """
 
 # --- Planner Prompt Template ---
@@ -100,36 +94,31 @@ The user will give you a task. Your ONLY job is to create a clear, step-by-step 
 Your "working directory" is `calculator/`.
 **CRITICAL INSTRUCTION:** All file paths in your plan MUST be relative to this directory.
 **DO NOT** include `calculator/` in any file paths.
+- **CORRECT:** `get_files_info("pkg")`
+- **INCORRECT:** `get_files_info("calculator/pkg")`
 
-**CRITICAL INSTRUCTION: HOW TO HANDLE PATHS**
-- The user might provide paths like `/pkg` or `calculator/pkg`. You MUST correct these to be relative.
-- **CORRECT PLAN:** `get_files_info("pkg")`
-- **INCORRECT PLAN:** `get_files_info("/pkg")`
-- **INCORRECT PLAN:** `get_files_info("calculator/pkg")`
-
-**CRITICAL INSTRUCTION: HOW TO RUN THE CALCULATOR**
+**CRITICAL SCENARIO: HOW TO RUN THE CALCULATOR**
 - The ONLY runnable script for the calculator is `main.py`.
 - The core logic is in `pkg/calculator.py`, but it **CANNOT BE RUN** directly.
-- **If the user asks to *use* or *run* the calculator (e.g., "compute 3 + 5"), your ONLY plan should be to use `run_python_file('main.py', ...)`**
-- Example: For "compute 3 + 5", the plan is to call `run_python_file('main.py', ['3', '+', '5'])`.
+- **If the user asks to *use* or *run* the calculator (e.g., "compute 3 + 5"), your ONLY plan MUST be a SINGLE step to use `run_python_file`.**
+- Do NOT plan to read, write, or modify any files for a simple calculation.
 
-- **Runnable Script:** The main CLI script is `main.py`.
-- **Core Logic File:** The calculator's class and logic is in `pkg/calculator.py`.
-- **Tests:** Unit tests are in `tests.py`.
+**CRITICAL: ARGUMENT FORMATTING**
+- The `args` for `run_python_file` MUST be a list of *separate strings*.
+- **CORRECT:** `run_python_file('main.py', ['2', '*', '3', '+', '5'])`
+- **INCORRECT:** `run_python_file('main.py', ['2 * 3 + 5'])`
 
-For example:
-- **CORRECT:** Plan to read `pkg/calculator.py`.
-- **INCORRECT:** Plan to read `calculator/pkg/calculator.py`.
-- **CORRECT:** Plan to run tests using `run_python_file("tests.py")`.
-- **INCORRECT:** Plan to run `pkg/calculator.py` (it is not runnable).
+**EXAMPLE SCENARIO:**
+- **USER PROMPT:** "Use the calculator to run '2 * 3 + 5'"
+- **YOUR CORRECT PLAN:**
+    1.  Execute the calculator script `main.py` using `run_python_file`. I will pass the expression as a list of string arguments: `['2', '*', '3', '+', '5']`.
+- **YOUR INCORRECT PLAN:**
+    1.  Execute the script with `['2 * 3 + 5']`.
+    2.  Read `main.py`.
 
-- Do NOT write any code.
-- Do NOT call any functions.
-- Your plan should be a bulleted list.
-- For each step, briefly mention any of the *only* available tools you anticipate using.
-
-HERE ARE THE ONLY TOOLS YOU CAN USE IN YOUR PLAN:
+**AVAILABLE TOOLS:**
+- You can plan to use any of the following tools:
 {tool_descriptions}
 
-Output ONLY the plan and nothing else.
+Output ONLY the plan as a bulleted list. Do not write any other text.
 """

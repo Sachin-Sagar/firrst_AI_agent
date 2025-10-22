@@ -11,23 +11,23 @@ from dotenv import load_dotenv # <-- Keep this top-level import
 from groq import Groq 
 from openai import OpenAI 
 
-# Import our centralized modules
-import tool_registry
-from call_function import call_function 
-# --- FIX: REMOVED config imports from here ---
-from logger_config import setup_logger
+# --- FIX: ALL local project imports are MOVED from here ---
+# We will import them INSIDE main() AFTER load_dotenv() runs
+# to prevent a pre-emptive import of config.py
 
 def main():
 
     # --- Initialization ---
     
     # --- FIX: load_dotenv() MUST be the first thing called ---
-    # This loads your .env file *before* config.py is imported.
-    load_dotenv()
+    # This loads your .env file *before* any other project file.
+    load_dotenv(override=True)
     
-    # --- FIX: Imports moved inside main() ---
-    # Now that .env is loaded, we can safely import config.py
-    # and it will read the correct LLM_PROVIDER value.
+    # --- FIX: All local imports are now INSIDE main() ---
+    # This prevents the pre-emptive import bug.
+    import tool_registry
+    from call_function import call_function 
+    from logger_config import setup_logger
     from config import (
         LLM_PROVIDER, 
         GROQ_MODEL, 
@@ -38,12 +38,19 @@ def main():
     )
     # --- END FIX ---
     
+    # --- DEBUG: Print the LLM_PROVIDER value ---
+    # This will now correctly show 'cerebras'
+    print(f"[DEBUG] LLM_PROVIDER string read from config: '{LLM_PROVIDER}'")
+    # --- END DEBUG ---
+    
     # --- LLM Provider Factory (The "Switch") ---
-    # This logic should now work correctly.
     client = None
     model_name = ""
 
     if LLM_PROVIDER == "groq":
+        # --- DEBUG ---
+        print("[DEBUG] Initializing GROQ client...")
+        # --- END DEBUG ---
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             print("Error: LLM_PROVIDER is 'groq' but GROQ_API_KEY not found in .env file.")
@@ -52,6 +59,9 @@ def main():
         model_name = GROQ_MODEL
         
     elif LLM_PROVIDER == "cerebras":
+        # --- DEBUG ---
+        print("[DEBUG] Initializing CEREBRAS client...")
+        # --- END DEBUG ---
         api_key = os.environ.get("CEREBRAS_API_KEY")
         if not api_key:
             print("Error: LLM_PROVIDER is 'cerebras' but CEREBRAS_API_KEY not found in .env file.")
@@ -64,12 +74,12 @@ def main():
         model_name = CEREBRAS_MODEL
         
     else:
+        # --- DEBUG ---
+        print(f"[DEBUG] Unknown LLM_PROVIDER: '{LLM_PROVIDER}'")
+        # --- END DEBUG ---
         print(f"Error: Unknown LLM_PROVIDER '{LLM_PROVIDER}' in .env file. Must be 'groq' or 'cerebras'.")
         sys.exit(1)
     
-    # --- END NEW ---
-
-
     # --- Command-Line Argument Parsing ---
     if len(sys.argv) < 2:
         print("Need a prompt to run")
@@ -87,7 +97,7 @@ def main():
     prompt = sys.argv[1]
     logger.info("--- STARTING AGENT RUN (Plan-then-Execute) ---")
     
-    # This log will now correctly show "cerebras"
+    # This log will now correctly show the provider
     logger.info(f"Using Provider: {LLM_PROVIDER}") 
     logger.info(f"Using Model: {model_name}")
     
@@ -177,9 +187,7 @@ def main():
                 return 
 
         except Exception as e:
-            # --- FIX: Changed error log to be generic ---
             logger.error(f"Error calling LLM API: {str(e)}")
-            # --- END FIX ---
             print(f"An error occurred: {str(e)}")
             return
 
