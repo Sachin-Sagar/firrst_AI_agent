@@ -1,140 +1,167 @@
 # main.py
 
 # This is the main entry point for the AI coding agent.
-# It orchestrates the entire process: loading the API key, getting user input,
-# communicating with the Gemini API, and managing the conversation loop.
+# It has been refactored to first create a plan, and then
+# execute that plan.
 
 import os
 import sys
-import time # Import the time module
+import logging
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-# Import the function schemas that the AI will be able to call.
-from functions.get_files_info import schema_get_files_info
-from functions.get_file_content import schema_get_file_contnet
-from functions.run_python_file import schema_run_python_file
-from functions.write_file import schema_write_file
-from functions.web_search import schema_web_search
-# Import the central function dispatcher.
-from call_function import call_function
-# Import the model name from the config file.
-from config import GEMINI_MODEL
+from groq import Groq
 
+# Import our centralized modules
+import tool_registry
+from call_function import call_function # Import our new dispatcher
+# --- FIX ---
+# Import the TEMPLATE names from config
+from config import GROQ_MODEL, SYSTEM_PROMPT_TEMPLATE, PLANNER_SYSTEM_PROMPT_TEMPLATE
+# --- END FIX ---
+from logger_config import setup_logger
 
 def main():
 
     # --- Initialization ---
-    # Load environment variables from a .env file (e.g., GEMINI_API_KEY).
     load_dotenv()
-    api_key = os.environ.get("GEMINI_API_KEY")
-    # Initialize the Gemini client with the API key.
-    client = genai.Client(api_key=api_key)
-
-    # --- System Prompt ---
-    # This prompt provides the AI with its core instructions, defining its role,
-    # capabilities, and constraints. It's crucial for guiding the AI's behavior.
-    system_prompt = """
-    You are a helpful AI assistant. While your primary expertise is in coding and interacting with the local file system, you can also answer general questions.
-
-    Primary Capabilities (Coding Tasks):
-    - When a user asks a question about the code project, they are referring to the working directory.
-    - You can list files, read their contents, write new code, and run python scripts to fulfill requests.
-    - Start by understanding the project structure before making changes.
-    - After any code modification, you should run tests to verify that everything works as expected.
-    - All file paths should be relative to the working directory.
-
-    General Conversation:
-    - If the user asks a general question not related to coding, provide a helpful and direct answer.
-    - You have access to a web search tool for up-to-date information.
-    """
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        print("GROQ_API_KEY not found in .env file.")
+        sys.exit(1)
+        
+    # Initialize the Groq client
+    client = Groq(api_key=api_key)
 
     # --- Command-Line Argument Parsing ---
-    # Check if a prompt was provided by the user.
     if len(sys.argv) < 2:
         print("Need a prompt to run")
         sys.exit(1)
         return
 
-    # Check for the optional '--verbose' flag for debugging.
     verbose_flag = False
     if len(sys.argv) == 3 and sys.argv[2] == "--verbose":
         verbose_flag = True
 
-    # The user's prompt is the first command-line argument.
+    # --- Logger Setup ---
+    setup_logger(verbose=verbose_flag)
+    logger = logging.getLogger("agent_logger")
+
     prompt = sys.argv[1]
+    logger.info("--- STARTING AGENT RUN (Plan-then-Execute) ---")
+    logger.info(f"Using model: {GROQ_MODEL}")
+    logger.info(f"Initial User Prompt: {prompt}")
+
+    # --- FIX: Format Prompts ---
+    # We format the prompts here *after* importing tool_registry
+    # to avoid the circular import.
+    tool_descriptions = tool_registry.TOOL_DESCRIPTIONS
+    SYSTEM_PROMPT = SYSTEM_PROMPT_TEMPLATE.format(tool_descriptions=tool_descriptions)
+    PLANNER_SYSTEM_PROMPT = PLANNER_SYSTEM_PROMPT_TEMPLATE.format(tool_descriptions=tool_descriptions)
+    # --- END FIX ---
+
+    # --- 1. PLANNING PHASE ---
+    # In this phase, the model has no tools and can only create a plan.
+    plan_text = ""
+    try:
+        logger.info("--- STARTING PLANNING PHASE ---")
+        # Create a temporary message list just for planning
+        planning_messages = [
+            # Use the formatted planner prompt
+            {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ]
+        
+        # Call the API with NO TOOLS
+        plan_response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=planning_messages,
+            tools=None, # No tools allowed
+            tool_choice="none" # Explicitly set to "none"
+        )
+        
+        plan_text = plan_response.choices[0].message.content
+        
+        # Log and print the plan as requested
+        logger.info("--- AGENT PLAN ---")
+        logger.info(plan_text)
+        logger.info("--- END OF PLAN ---")
+        
+        print("\n--- AGENT PLAN ---")
+        print(plan_text)
+        print("--- END OF PLAN ---\n")
+
+    except Exception as e:
+        logger.error(f"Error during planning phase: {str(e)}")
+        print(f"An error occurred during planning: {str(e)}")
+        return
+        
+    # --- 2. EXECUTION PHASE ---
+    # The model now gets its tools and is instructed to follow the plan.
+    logger.info("--- STARTING EXECUTION PHASE ---")
 
     # --- Conversation History ---
-    # 'messages' stores the entire conversation history. It starts with the user's first prompt.
-    # It will be appended with the AI's responses and the results of tool calls.
+    # Initialize the real message history, including the plan
+    # The agent will now follow its own plan.
     messages = [
-        types.Content(role="user", parts=[types.Part(text=prompt)]),
+        {"role": "system", "content": SYSTEM_PROMPT}, # Use the formatted executor prompt
+        {"role": "user", "content": prompt},
+        {"role": "assistant", "content": plan_text} # The plan it just created
     ]
 
     # --- Tool Configuration ---
-    # The 'Tool' object bundles all the function declarations (schemas)
-    # that the AI is allowed to use.
-    available_functions = types.Tool(
-        function_declarations = [
-            schema_get_files_info,
-            schema_get_file_contnet,
-            schema_run_python_file,
-            schema_write_file,
-            schema_web_search
-        ]
-    )
+    # Get all available tools from our new tool registry
+    available_tools = tool_registry.get_openai_tools()
 
-    # The GenerateContentConfig ties the tools and system prompt to the API request.
-    config = types.GenerateContentConfig(
-        tools = [available_functions],
-        system_instruction = system_prompt
-    )
-
-    # --- Main Agent Loop ---
-    # This loop allows the agent to make multiple function calls to solve a complex problem.
-    # It's limited to 'max_iters' to prevent infinite loops.
+    # --- Main Agent Loop (Unchanged) ---
     max_iters = 20
     for i in range(max_iters):
+        logger.info(f"--- Iteration {i+1} / {max_iters} ---")
+        
+        # --- Status message for thinking ---
+        print("🤖 Model is thinking...")
+        
+        try:
+            # --- API Call ---
+            response = client.chat.completions.create(
+                model = GROQ_MODEL,
+                messages = messages,
+                tools = available_tools,
+                tool_choice = "auto"
+            )
 
-        # Send the conversation history and configuration to the Gemini model.
-        response = client.models.generate_content(
-            model = GEMINI_MODEL, # Using the model defined in config.py.
-            contents = messages,
-            config = config,
-        )
+            response_message = response.choices[0].message
+            messages.append(response_message) # Add model's response to history
+            
+            # --- Log Token Usage ---
+            if response.usage:
+                logger.info(f"Prompt tokens: {response.usage.prompt_tokens}")
+                logger.info(f"Response tokens: {response.usage.completion_tokens}")
 
-        if response is None or response.usage_metadata is None:
-            print("No response or usage metadata available.")
-            return
+            # --- Function Call Handling ---
+            if response_message.tool_calls:
+                for tool_call in response_message.tool_calls:
+                    # --- Status message for tool call ---
+                    print(f"🛠️  Calling tool: {tool_call.function.name}({tool_call.function.arguments})")
 
-        # Print token usage for debugging costs and performance.
-        if verbose_flag:
-            print(f"User prompt: {prompt}")
+                    # Delegate the entire tool call to our dispatcher
+                    tool_result_message = call_function(tool_call)
+                    
+                    # Append the tool's result to the message history
+                    messages.append(tool_result_message)
 
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+            else:
+                # If no tool calls, it's the final answer.
+                final_answer = response_message.content
+                logger.info(f"LLM Response (Final Answer): {final_answer}")
+                logger.info("--- AGENT RUN FINISHED ---")
+                
+                # --- Clear header for final answer ---
+                print("\n--- AGENT'S FINAL ANSWER ---")
+                print(final_answer)
+                return # Exit the loop and program
 
-        # Append the AI's response to the conversation history.
-        if response.candidates:
-            for candidate in response.candidates:
-                if candidate is None or candidate.content is None:
-                    continue
-                messages.append(candidate.content)
-
-        # --- Function Call Handling ---
-        # Check if the AI's response includes a request to call a function.
-        if response.function_calls:
-            for function_call_part in response.function_calls:
-                # Use the dispatcher to execute the requested function.
-                result = call_function(function_call_part, verbose_flag)
-                # Append the function's result to the history so the AI knows what happened.
-                messages.append(result)
-                # Add a delay to stay within the free tier rate limits
-                time.sleep(2)
-        else:
-            # If there are no function calls, it means the AI has its final answer.
-            # Print the text response and exit the loop.
-            print(response.text)
+        except Exception as e:
+            logger.error(f"Error calling Groq API: {str(e)}")
+            print(f"An error occurred: {str(e)}")
             return
 
 # Standard Python entry point.

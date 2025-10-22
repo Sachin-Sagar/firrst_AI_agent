@@ -9,6 +9,7 @@ dependencies = [
     "python-dotenv",
     "google-cloud-aiplatform",
     "google-api-python-client", 
+    "groq", # Add this line
 ]
 
 [tool.setuptools]

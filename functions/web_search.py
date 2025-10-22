@@ -2,7 +2,7 @@
 
 import os
 import json
-from google.genai import types
+# We no longer need: from google.genai import types
 from googleapiclient.discovery import build
 
 def web_search(queries: list[str]):
@@ -48,21 +48,26 @@ def web_search(queries: list[str]):
     except Exception as e:
         return f"Error performing web search: {str(e)}"
 
-# --- Gemini Function Declaration ---
-schema_web_search = types.FunctionDeclaration(
-    name="web_search",
-    description="Performs a web search using the Google Custom Search API and returns a summary of the top results.",
-    parameters=types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "queries": types.Schema(
-                type=types.Type.ARRAY,
-                description="A list of search queries to be combined into one search.",
-                items=types.Schema(
-                    type=types.Type.STRING
-                )
-            ),
+# --- OpenAI/Groq Function Declaration (as a dict) ---
+# Replaced the google.genai.types.FunctionDeclaration
+# with a plain Python dictionary in the format Groq expects.
+schema_web_search = {
+    "type": "function",
+    "function": {
+        "name": "web_search",
+        "description": "Performs a web search using the Google Custom Search API and returns a summary of the top results.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "queries": {
+                    "type": "array",
+                    "description": "A list of search queries to be combined into one search.",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": ["queries"], # 'queries' is required
         },
-        required=["queries"],
-    ),
-)
+    }
+}

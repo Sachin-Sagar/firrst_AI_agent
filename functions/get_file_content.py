@@ -2,7 +2,7 @@
 
 import os
 from config import MAX_CHARACTERS
-from google.genai import types
+# We no longer need: from google.genai import types
 
 def get_file_content(working_directory, file_path):
     """
@@ -51,19 +51,23 @@ def get_file_content(working_directory, file_path):
         return f'Error reading file {file_path}: {str(e)}'
 
 
-# --- Gemini Function Declaration ---
-# This schema defines the structure of the get_file_content function for the Gemini model.
-# It tells the AI what the function is called, what it does, and what parameters it expects.
-schema_get_file_contnet = types.FunctionDeclaration(
-    name="get_file_content",
-    description="Gets file content of the given file as a string, constrained to the working directory.",
-    parameters=types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "file_path": types.Schema(
-                type=types.Type.STRING,
-                description="The path to the file, from the working directory.",
-            ),
+# --- OpenAI/Groq Function Declaration (as a dict) ---
+# Replaced the google.genai.types.FunctionDeclaration
+# with a plain Python dictionary in the format Groq expects.
+schema_get_file_content = {
+    "type": "function",
+    "function": {
+        "name": "get_file_content",
+        "description": "Gets file content of the given file as a string, constrained to the working directory.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "The path to the file, from the working directory.",
+                }
+            },
+            "required": ["file_path"], # 'file_path' is required
         },
-    ),
-)
+    }
+}

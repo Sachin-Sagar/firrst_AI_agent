@@ -1,83 +1,67 @@
 # call_function.py
 
-# This script acts as a central dispatcher for all function calls made by the AI.
-# When the Gemini model decides to call a function (e.g., "get_files_info"),
-# this script is responsible for executing the corresponding Python function
-# and returning the result in a format the model can understand.
+# This script acts as the central dispatcher for all function calls.
+# It is called by main.py and uses tool_registry.py to
+# execute the correct function.
 
-from functions.get_files_info import get_files_info
-from functions.get_file_content import get_file_content
-from functions.run_python_file import run_python_file
-from functions.write_file import write_file
-from functions.web_search import web_search  # Import the new web_search function
-from google.genai import types
+import logging
+import json
+import tool_registry # Import our new tool registry
 
-# The working directory is set here to ensure all file operations are sandboxed.
-working_directory = "calculator"
-
-def call_function(function_call_part, verbose = False):
+def call_function(tool_call):
     """
-    Executes the appropriate function based on the name provided by the Gemini model.
+    Executes a tool call requested by the Groq model.
 
     Args:
-        function_call_part (genai.types.FunctionCall): The function call object from the model,
-                                                      containing the name and arguments.
-        verbose (bool, optional): If True, prints detailed information about the function call.
-                                  Defaults to False.
+        tool_call (obj): The tool_call object from the Groq response.
+                         It contains the function name and arguments.
 
     Returns:
-        genai.types.Content: A Content object containing the result of the function call,
-                             formatted for the Gemini model's conversational history.
+        dict: A dictionary formatted as a "tool" message for the
+              OpenAI/Groq API, containing the result of the function call.
     """
-    # The verbose flag is useful for debugging to see what the AI is trying to do.
-    if verbose:
-        print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    else:
-        print(f"Calling function: {function_call_part.name}")
+    # Get the shared logger instance
+    logger = logging.getLogger("agent_logger")
 
-    result = ""
-    # --- Function Routing ---
-    # Use if statements to match the function name from the AI to the actual Python function.
-    if function_call_part.name == "get_files_info":
-        # The **function_call_part.args unpacks the arguments from the model
-        # and passes them as keyword arguments to the Python function.
-        result = get_files_info(working_directory, **function_call_part.args)
+    function_name = tool_call.function.name
+    function_args_str = tool_call.function.arguments
+    tool_call_id = tool_call.id
+    
+    # We log the request here, as this is the dispatch layer
+    logger.info(f"Dispatching function call: {function_name} with args: {function_args_str}")
 
-    if function_call_part.name == "get_file_content":
-        result = get_file_content(working_directory, **function_call_part.args)
+    try:
+        # Parse the JSON string of arguments
+        function_args = json.loads(function_args_str)
+        
+        # Call the tool using our registry
+        # This one line replaces the need for a giant if/elif block
+        result_content = tool_registry.call_tool(function_name, **function_args)
+        
+        logger.info(f"Function Result ({function_name}): {result_content}")
 
-    if function_call_part.name == "run_python_file":
-        result = run_python_file(working_directory, **function_call_part.args)
+        # Return the formatted result dictionary
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": function_name,
+            "content": result_content
+        }
 
-    if function_call_part.name == "write_file":
-        result = write_file(working_directory, **function_call_part.args)
-
-    # Add the new web_search function to the dispatcher
-    if function_call_part.name == "web_search":
-        result = web_search(**function_call_part.args)
-
-    # --- Response Formatting ---
-    # If no function matched, return an error.
-    if result == "":
-        return types.Content(
-            role="tool",
-            parts=[
-                types.Part.from_function_response(
-                    name=function_call_part.name,
-                    response={"error": f"Unknown function: {function_call_part.name}"},
-                )
-            ],
-        )
-
-    else:
-        # If a function was successfully called, wrap its result in a Content object.
-        # This is the standard way to provide tool output back to the Gemini model.
-        return types.Content(
-            role="tool",
-            parts=[
-                types.Part.from_function_response(
-                    name=function_call_part.name,
-                    response={"result": result},
-                )
-            ],
-        )
+    except json.JSONDecodeError:
+        logger.error(f"Failed to decode function arguments: {function_args_str}")
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": function_name,
+            "content": f"Error: Invalid arguments JSON: {function_args_str}"
+        }
+    except Exception as e:
+        logger.error(f"Error calling tool {function_name}: {str(e)}")
+        # Return an error message for the model
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": function_name,
+            "content": f"Error executing function: {str(e)}"
+        }

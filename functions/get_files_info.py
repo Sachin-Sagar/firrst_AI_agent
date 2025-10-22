@@ -1,7 +1,7 @@
 # functions/get_files_info.py
 
 import os
-from google.genai import types
+# We no longer need: from google.genai import types
 
 def get_files_info(working_directory, directory="."):
     """
@@ -56,19 +56,23 @@ def get_files_info(working_directory, directory="."):
     return final_response
 
 
-# --- Gemini Function Declaration ---
-# This schema defines the structure of the get_files_info function for the Gemini model.
-# It tells the AI what the function is called, what it does, and what parameters it expects.
-schema_get_files_info = types.FunctionDeclaration(
-    name="get_files_info",
-    description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
-    parameters=types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "directory": types.Schema(
-                type=types.Type.STRING,
-                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
-            ),
+# --- OpenAI/Groq Function Declaration (as a dict) ---
+# We are replacing the google.genai.types.FunctionDeclaration
+# with a plain Python dictionary in the format Groq expects.
+schema_get_files_info = {
+    "type": "function",
+    "function": {
+        "name": "get_files_info",
+        "description": "Lists files in the specified directory along with their sizes, constrained to the working directory.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "directory": {
+                    "type": "string",
+                    "description": "The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
+                }
+            },
+            "required": [], # 'directory' is optional
         },
-    ),
-)
+    }
+}

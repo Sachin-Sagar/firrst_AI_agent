@@ -2,7 +2,7 @@
 
 import os
 import subprocess
-from google.genai import types
+# We no longer need: from google.genai import types
 
 def run_python_file(working_directory, file_path, args=[]):
     """
@@ -76,28 +76,30 @@ STDERR: {output.stderr}
         return f'An unexpected error occurred while running "{file_path}": {str(e)}'
 
 
-# --- Gemini Function Declaration ---
-# This schema defines the structure of the run_python_file function for the Gemini model.
-# It tells the AI what the function is called, its purpose, and the parameters it accepts,
-# including the optional command-line arguments.
-schema_run_python_file = types.FunctionDeclaration(
-    name="run_python_file",
-    description="Runs a python file with the python3 interpreter, constrained to the working directory. Accepts additional CLI args as an optional array.",
-    parameters=types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "file_path": types.Schema(
-                type=types.Type.STRING,
-                description="The file to run, relative to the working directory.",
-            ),
-
-            "args": types.Schema(
-                type=types.Type.ARRAY,
-                description="An optionsal array of strings to be used as a CLI args for the python file.",
-                items = types.Schema(
-                    type = types.Type.STRING,
-                )
-            ),
+# --- OpenAI/Groq Function Declaration (as a dict) ---
+# Replaced the google.genai.types.FunctionDeclaration
+# with a plain Python dictionary in the format Groq expects.
+schema_run_python_file = {
+    "type": "function",
+    "function": {
+        "name": "run_python_file",
+        "description": "Runs a python file with the python3 interpreter, constrained to the working directory. Accepts additional CLI args as an optional array.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "The file to run, relative to the working directory.",
+                },
+                "args": {
+                    "type": "array",
+                    "description": "An optional array of strings to be used as CLI args for the python file.",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": ["file_path"], # 'file_path' is required, 'args' is optional
         },
-    ),
-)
+    }
+}

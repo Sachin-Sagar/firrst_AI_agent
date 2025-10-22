@@ -1,22 +1,23 @@
 # AI Coding Agent
 
-This project is a Python-based AI coding agent that can intelligently interact with your file system. It is designed to be a powerful and safe assistant for developers, capable of understanding requests, performing actions like reading and writing code, and executing Python scripts, all while maintaining a secure and transparent record of its changes.
+This project is a Python-based AI coding agent powered by the **Groq API** and **Llama 3.1**. It is designed to be a powerful and safe assistant for developers, capable of intelligently interacting with your file system. It can understand requests, perform actions like reading and writing code, running Python scripts, and searching the web, all while maintaining a secure and transparent record of its actions.
+
+The agent follows a clean, refactored architecture that makes it easy to maintain and extend with new tools.
 
 ---
 
 ## ⭐ Key Features
 
-* **Web Searching**: The agent can search the web to find up-to-date information, like library documentation or error solutions.
-* **File and Directory Listing**: The agent can list the files and directories in your project, giving you a quick overview of your codebase.
-* **File Content Reading**: You can ask the agent to read the contents of a specific file, and it will return the content as a string.
-* **Safe File Writing**: The agent can write new code to a file or update existing ones.
-* **Automated Backups and Change-logs**: This is a critical safety feature. Before the agent overwrites any existing file, it automatically:
-    1.  Creates a timestamped backup of the original file in a `backups/` directory.
-    2.  Generates a detailed change-log in Markdown format, which includes the initial prompt, the agent's plan, and the rationale behind the changes.
-    3.  Saves this change-log to the `backups/` directory with a corresponding timestamp.
-* **Python Script Execution**: One of the most powerful features of the agent is its ability to run Python scripts and capture their output, allowing you to test code on the fly.
-* **Extensible Function Set**: The agent's capabilities are defined in the `functions/` directory. You can easily add new Python scripts to this directory to extend the agent's functionality.
-* **Pre-built Calculator**: The project comes with a pre-built command-line calculator as an example of a self-contained sub-project that the agent can interact with.
+* **⚡ Blazing Fast:** Uses the Groq API for near-instantaneous model responses.
+* **📂 File System Access:** Can read, write, and list files to perform coding tasks directly.
+* **🤖 Script Execution:** Ability to run Python scripts (e.g., running tests, builds) and analyze their output.
+* **🌐 Web Searching:** Can search the web using the Google Custom Search API to find documentation or error solutions.
+* **🛡️ Safe & Secure:**
+    * **Sandboxed:** All file operations are constrained to a specific working directory (`calculator/` by default).
+    * **Automated Backups:** Automatically creates a timestamped backup of any file before modification.
+    * **Change-logs:** Generates a detailed log explaining the "why" behind any file change.
+* **📝 Comprehensive Logging:** Every agent run—including the initial prompt, all model thoughts, function calls, and results—is saved to a timestamped file in the `logs/` directory for easy debugging.
+* **🔧 Easily Extensible:** Designed with a clean "registry" pattern. Adding new tools is as simple as creating a function and adding it to the `tool_registry.py` file.
 
 ---
 
@@ -24,7 +25,7 @@ This project is a Python-based AI coding agent that can intelligently interact w
 
 To get started with the AI Coding Agent, you'll need to have Python 3.10 or higher installed.
 
-### Installation
+### 1. Installation
 
 1.  **Clone the repository**:
     ```bash
@@ -35,77 +36,158 @@ To get started with the AI Coding Agent, you'll need to have Python 3.10 or high
     cd first_ai_agent
     ```
 3.  **Install the required dependencies**:
-    Make sure your `pyproject.toml` file includes all the necessary dependencies, then run:
+    We recommend using a virtual environment. This project uses `pyproject.toml`.
     ```bash
+    # If using pip
     pip install -e .
+    
+    # If using uv
+    uv venv
+    source .venv/bin/activate
+    uv pip install -e .
     ```
 
-### Configuration
+### 2. Configuration
 
 1.  Create a `.env` file in the root of the project.
-2.  Add your Gemini API key to the `.env` file:
+2.  Add your API keys to the `.env` file:
     ```
-    GEMINI_API_KEY="your-gemini-api-key"
+    # --- Required ---
+    GROQ_API_KEY="your-groq-api-key"
+    
+    # --- Optional (for Web Search) ---
     GOOGLE_API_KEY="your-google-cloud-api-key"
     SEARCH_ENGINE_ID="your-programmable-search-engine-id"
     ```
+    * **`GROQ_API_KEY`**: Get this from the [Groq Console](https://console.groq.com/keys). This is required for the agent to think.
+    * **`GOOGLE_API_KEY`**: For the Google Custom Search API. Get this from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+    * **`SEARCH_ENGINE_ID`**: Get this from the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
 
-    * **`GEMINI_API_KEY`**: For accessing the Gemini model.
-    * **`GOOGLE_API_KEY`**: For the Google Custom Search API. You can get this from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
-    * **`SEARCH_ENGINE_ID`**: You can get this by creating a new search engine at the [Programmable Search Engine control panel](https://programmablesearchengine.google.com/controlpanel/all).
-
-### Usage
+### 3. Usage
 
 You can run the AI agent from the command line by passing a prompt as an argument:
 
 ```bash
+# If using pip
 python main.py "Your prompt here"
-For example, to ask the agent to refactor a file, you would run:
 
+# If using uv
+uv run main.py "Your prompt here"
+
+Example:
 Bash
 
-python main.py "Refactor the 'calculator.py' file to improve its readability."
-You can also add the --verbose flag to see more detailed output, including the number of tokens used for the prompt and response:
+uv run main.py "Use the calculator app to compute 3 * (4 + 5)"
 
+To see a detailed, real-time log of the agent's thoughts and actions, use the --verbose flag:
 Bash
 
-python main.py "Your prompt here" --verbose
-📂 Project Structure Here is a brief overview of the key files and directories in this project:
+uv run main.py "Refactor calculator/main.py to improve readability" --verbose
 
-main.py: The main entry point for the AI agent. It manages the conversation loop with the Gemini API.
+🏛️ Project Architecture
 
-call_function.py: A dispatcher that calls the appropriate Python function based on the AI's request.
+This project is refactored for clarity and separation of concerns.
 
-functions/: This directory contains all the functions that the AI agent can call.
+    main.py: The main entry point. It's a clean, simple loop that manages the conversation between the user, the LLM, and the tools.
 
-write_file.py: Writes content to a specified file, and now includes the logic for creating backups and saving change-logs.
+    call_function.py: The central dispatcher. main.py passes all tool-call requests here.
 
-get_files_info.py: Lists the files in a specified directory.
+    tool_registry.py: The "switchboard" for all tools. It imports all tool functions and their schemas, making them available to the rest of the app. This is the main file you'll edit to add new tools.
 
-get_file_content.py: Reads the content of a given file.
+    config.py: Centralized configuration. Stores the system prompt and the Groq model name (GROQ_MODEL).
 
-run_python_file.py: Executes a Python file and returns its output.
+    logger_config.py: A simple module that sets up the timestamped file logging and verbose console logging.
 
-backups/: This directory is automatically created and will store all file backups and change-logs generated by the agent.
+    functions/: A directory containing the raw Python code for each individual tool (e.g., write_file.py, get_files_info.py, web_search.py).
 
-calculator/: A self-contained command-line calculator module.
+    logs/: This directory is automatically created and stores the detailed log file for every agent run.
 
-config.py: Contains global configuration variables.
+    backups/: This directory is automatically created and stores file backups and change-logs generated by the write_file tool.
 
-tests.py: Contains a simple test for the run_python_file function.
+    calculator/: The self-contained example project (a command-line calculator) that the agent interacts with.
 
-🛡️ Backup and Change-log System To ensure that you can always track the agent's work and revert any changes if necessary, the write_file function has been enhanced with a robust backup and logging system.
+How it Works: Agent Loop
 
-When you ask the agent to modify an existing file, the following happens automatically:
+    User runs main.py with a prompt.
 
-A copy of the original file is saved to the backups/ directory with a timestamp. For example, calculator.py would be saved as calculator.py_20231027_154501.bak.
+    main.py gets the list of all available tools from tool_registry.py.
 
-The agent generates a change-log that includes:
+    main.py sends the prompt and tool list to the Groq API.
 
-The initial prompt from the user.
+    Groq API responds, either with a final answer or a tool_call request (e.g., "call get_files_info").
 
-The agent's step-by-step plan.
+    main.py passes the tool_call object to call_function.py.
 
-A detailed explanation of the code changes and the reasoning behind them.
+    call_function.py uses tool_registry.py to look up the correct function by name (e.g., get_files_info) and executes it.
 
-This log is saved as a Markdown file in the backups/ directory, with a matching timestamp (e.g., changelog_calculator.py_20231027_154501.md).
+    The function's result (e.g., a string containing the file list) is returned to main.py.
+
+    main.py appends the result to the conversation history and sends it all back to the Groq API (back to step 4).
+
+    This loop continues until the Groq API provides a final text answer to the user.
+
+🔧 How to Add a New Tool
+
+Thanks to the refactored design, adding a new capability to the agent is simple.
+
+Goal: Let's add a new tool called read_log_file.
+
+    Create the Tool Function: Create a new file in functions/read_log_file.py.
+    Python
+
+# functions/read_log_file.py
+
+def read_log_file(log_file_name):
+    """Reads a specific log file from the /logs directory."""
+    try:
+        # Note: This tool should also have security checks
+        with open(f"logs/{log_file_name}", 'r') as f:
+            return f.read()
+    except Exception as e:
+        return f"Error reading log: {str(e)}"
+
+# Define its schema in OpenAI/Groq format
+schema_read_log_file = {
+    "type": "function",
+    "function": {
+        "name": "read_log_file",
+        "description": "Reads the content of a specific log file from the /logs directory.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "log_file_name": {
+                    "type": "string",
+                    "description": "The name of the log file to read (e.g., 'agent_run_20251022_093000.log')."
+                }
+            },
+            "required": ["log_file_name"]
+        }
+    }
+}
+
+Register the Tool: Open tool_registry.py and make two changes:
+Python
+
+# tool_registry.py
+
+# ... other imports
+from functions.web_search import web_search, schema_web_search
+# 1. Import your new function and schema
+from functions.read_log_file import read_log_file, schema_read_log_file
+
+# ...
+
+_tool_map = {
+    # ... other tools
+    "web_search": web_search,
+    # 2. Add your tool to the map and schema list
+    "read_log_file": read_log_file,
+}
+
+_tool_schemas = [
+    # ... other schemas
+    schema_web_search,
+    schema_read_log_file,
+]
+
+# ... rest of the file
