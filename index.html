@@ -35,7 +35,7 @@
     <header class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-4">
             <h1 class="text-4xl font-bold text-indigo-600">AI Coding Agent: Project Overview</h1>
-            <p class="mt-2 text-lg text-gray-600">An intelligent assistant powered by the Groq API and Llama 3.1, designed to streamline development and ensure project safety.</p>
+            <p class="mt-2 text-lg text-gray-600">An intelligent assistant powered by multiple LLM APIs (including Groq and Cerebras) using Llama 3.3 models, designed to streamline development and ensure project safety.</p>
         </div>
     </header>
 
@@ -65,8 +65,8 @@
                             <text x="350" y="310" font-size="14" text-anchor="middle" fill="#4338CA">(main.py)</text>
 
                             <rect x="500" y="100" width="150" height="80" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="2"/>
-                            <text x="575" y="135" font-size="18" text-anchor="middle" font-weight="bold" fill="#047857">Groq API</text>
-                            <text x="575" y="160" font-size="14" text-anchor="middle" fill="#065F46">(Llama 3.1)</text>
+                            <text x="575" y="135" font-size="18" text-anchor="middle" font-weight="bold" fill="#047857">LLM API</text>
+                            <text x="575" y="160" font-size="14" text-anchor="middle" fill="#065F46">(Groq or Cerebras)</text>
 
                             <rect x="725" y="250" width="150" height="80" rx="10" fill="#E0E7FF" stroke="#6366F1" stroke-width="2"/>
                             <text x="800" y="285" font-size="18" text-anchor="middle" font-weight="bold" fill="#3730A3">Agent's Tools</text>
@@ -98,7 +98,7 @@
                             <path d="M 720 310 H 430" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow)"/>
                             <text x="550" y="325">7. Return Result</text>
                             
-                            <text x="575" y="80" font-style="italic" text-anchor="middle">8. Agent sends result back to Groq.</text>
+                            <text x="575" y="80" font-style="italic" text-anchor="middle">8. Agent sends result back to LLM.</text>
                             <text x="575" y="60" font-style="italic" text-anchor="middle">The loop (2-8) repeats until the task is complete.</text>
 
                             <path d="M 270 270 Q 150 200 150 250" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
@@ -116,7 +116,8 @@
                 <div class="card">
                     <h3 class="text-2xl font-semibold text-gray-800 mb-4">Existing Features</h3>
                     <ul class="space-y-3">
-                        <li class="list-item"><strong>Groq API Integration:</strong> Uses the high-speed Groq API with Llama 3.1 for near-instant responses.</li>
+                        <li class="list-item"><strong>Multi-Provider LLM Support:</strong> Flexibly switch between Groq and Cerebras APIs.</li>
+                        <li class="list-item"><strong>High-Speed Models:</strong> Uses Llama 3.3 70B models for fast and powerful responses.</li>
                         <li class="list-item"><strong>Plan-then-Execute Model:</strong> Creates a robust plan before executing any actions for better reliability.</li>
                         <li class="list-item"><strong>Web Searching Capability:</strong> Can search the web for documentation, updates, or error solutions.</li>
                         <li class="list-item"><strong>File System Access:</strong> Can read, write, and list files to perform coding tasks directly.</li>

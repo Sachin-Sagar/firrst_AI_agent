@@ -16,6 +16,7 @@ from functions.get_file_content import get_file_content, schema_get_file_content
 from functions.run_python_file import run_python_file, schema_run_python_file
 from functions.write_file import write_file, schema_write_file
 from functions.web_search import web_search, schema_web_search
+from functions.execute_dynamic_python import execute_dynamic_python, schema_execute_dynamic_python # <-- ADDED
 
 # The working directory is set here.
 # In a more advanced implementation, this could be passed around
@@ -32,6 +33,7 @@ _tool_map = {
     "run_python_file": run_python_file,
     "write_file": write_file,
     "web_search": web_search,
+    "execute_dynamic_python": execute_dynamic_python, # <-- ADDED
 }
 
 # A list containing all the schema dictionaries.
@@ -42,6 +44,7 @@ _tool_schemas = [
     schema_run_python_file,
     schema_write_file,
     schema_web_search,
+    schema_execute_dynamic_python, # <-- ADDED
 ]
 
 # --- NEW: Tool Descriptions for Prompt Grounding ---
@@ -53,6 +56,7 @@ TOOL_DESCRIPTIONS = """
 - `run_python_file(file_path: str, args: list[str])`: Executes a Python file (like `main.py` or `tests.py`) relative to the `calculator/` working directory.
 - `write_file(file_path: str, content: str, change_log: str)`: Writes new content to a file relative to the `calculator/` working directory.
 - `web_search(queries: list[str])`: Performs a Google web search for up-to-date information or error solutions.
+- `execute_dynamic_python(script_code: str, script_input: str)`: Executes a string of Python code in a sandbox. Use this for custom logic. The code MUST read from `sys.stdin` to get the `script_input` data.
 """
 
 # --- Helper Function (REMOVED) ---
@@ -94,7 +98,10 @@ def call_tool(name: str, **kwargs):
     # argument. Web search doesn't, so we check.
     # A more robust way would be to inspect the function signature,
     # but for now, this works.
-    if name in ["get_files_info", "get_file_content", "run_python_file", "write_file"]:
+    
+    # --- MODIFIED ---
+    if name in ["get_files_info", "get_file_content", "run_python_file", "write_file", "execute_dynamic_python"]:
+    # --- END MODIFIED ---
         # Inject the working_directory as the first argument
         return func_to_call(working_directory, **kwargs)
     else:

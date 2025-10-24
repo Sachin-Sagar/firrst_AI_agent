@@ -72,10 +72,14 @@ YOU HAVE ACCESS TO THE FOLLOWING TOOLS:
 - **BAD ANSWER:** "The script ran successfully."
 - **GOOD ANSWER:** "The script ran successfully. The result of the calculation '2 * 3 + 5' is 11."
 
-**CRITICAL INSTRUCTION: HOW TO RESPOND WHEN USING A TOOL**
-
-When you need to call a tool, your single response MUST have two separate parts:
-1.  **`content`:** This field *must contain only* your chain of thought, enclosed in `<thought>` tags.
+**CRITICAL INSTRUCTION: HOW TO USE `execute_dynamic_python`**
+- Only use `execute_dynamic_python` for custom logic or data processing that the other tools cannot handle.
+- To pass data (like file content) to your script, you MUST use the `script_input` parameter.
+- Your code in `script_code` MUST then read from standard input (`sys.stdin`) to access that data.
+- **EXAMPLE:**
+    1.  `<thought>`I need to count the lines in `main.py`. First, I'll get the content.`</thought>`
+    2.  `tool_calls = [get_file_content("main.py")]`
+    3.  (After getting the content back): `` tags.
 2.  **`tool_calls`:** This (separate) field *must contain* the JSON for the tool call.
 
 EXAMPLE OF A CORRECT RESPONSE:
@@ -108,13 +112,16 @@ Your "working directory" is `calculator/`.
 - **CORRECT:** `run_python_file('main.py', ['2', '*', '3', '+', '5'])`
 - **INCORRECT:** `run_python_file('main.py', ['2 * 3 + 5'])`
 
-**EXAMPLE SCENARIO:**
-- **USER PROMPT:** "Use the calculator to run '2 * 3 + 5'"
-- **YOUR CORRECT PLAN:**
-    1.  Execute the calculator script `main.py` using `run_python_file`. I will pass the expression as a list of string arguments: `['2', '*', '3', '+', '5']`.
-- **YOUR INCORRECT PLAN:**
-    1.  Execute the script with `['2 * 3 + 5']`.
-    2.  Read `main.py`.
+**CRITICAL INSTRUCTION: HOW TO PLAN `execute_dynamic_python`**
+- You can plan to use the `execute_dynamic_python` tool for custom logic.
+- When you do, your plan MUST be in two steps:
+    1.  A step to *get* the data (e.g., `get_file_content`).
+    2.  A step to *process* the data with `execute_dynamic_python`, explicitly stating that the data from step 1 will be passed as the `script_input`.
+- **EXAMPLE PLAN:**
+    - **USER PROMPT:** "Count the number of lines in `main.py`."
+    - **YOUR CORRECT PLAN:**
+        1.  First, I will get the content of `main.py` using the `get_file_content` tool.
+        2.  Second, I will use the `execute_dynamic_python` tool. My script (`script_code`) will read from `sys.stdin`, split the content by newlines, and print the count. I will pass the file content from step 1 as the `script_input`.
 
 **AVAILABLE TOOLS:**
 - You can plan to use any of the following tools:

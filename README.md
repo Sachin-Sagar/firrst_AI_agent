@@ -1,4 +1,4 @@
-AI Coding Agent
+# AI Coding Agent
 
 This project is a Python-based AI coding agent powered by multiple LLM APIs. It is designed to be a powerful and safe assistant for developers, capable of intelligently interacting with your file system. It follows a "Plan-then-Execute" model to first create a detailed plan and then execute it step-by-step.
 
@@ -123,61 +123,75 @@ python main.py "Your prompt here"
 
 # Example:
 python main.py "Use the calculator app to compute 3 * (4 + 5)"
-
 To see a detailed, real-time log of the agent's plan, thoughts, and actions, use the --verbose flag:
+
 Bash
 
 python main.py "Refactor calculator/main.py to improve readability" --verbose
-
 Available Tools
 
 The agent has access to the following tools, which are managed by tool_registry.py:
 
-    get_files_info(directory: str): Lists files and directories in a specified path relative to the calculator/ working directory.
+get_files_info(directory: str): Lists files and directories in a specified path relative to the calculator/ working directory.
 
-    get_file_content(file_path: str): Reads the text content of a file relative to the calculator/ working directory.
+get_file_content(file_path: str): Reads the text content of a file relative to the calculator/ working directory.
 
-    run_python_file(file_path: str, args: list[str]): Executes a Python file (like main.py or tests.py) relative to the calculator/ working directory and captures its output.
+run_python_file(file_path: str, args: list[str]): Executes a Python file (like main.py or tests.py) relative to the calculator/ working directory and captures its output.
 
-    write_file(file_path: str, content: str, change_log: str): Writes new content to a file relative to the calculator/ working directory. Automatically creates backups and change-logs.
+write_file(file_path: str, content: str, change_log: str): Writes new content to a file relative to the calculator/ working directory. Automatically creates backups and change-logs.
 
-    web_search(queries: list[str]): Performs a Google web search for up-to-date information or error solutions.
+web_search(queries: list[str]): Performs a Google web search for up-to-date information or error solutions.
 
 🧪 Testing
 
-The example calculator/ project comes with its own set of unit tests. You can (and should!) instruct the agent to run these tests to verify its changes.
+This project includes two separate test files:
 
-To run the unit tests for the calculator manually:
-Bash
+Unit Tests (for the calculator app):
 
-python calculator/tests.py
+File: calculator/tests.py
 
-(Note: The tests.py file in the root directory is a non-functional integration test and should be disregarded.)
+Purpose: This is a standard unittest suite that tests the logic of the Calculator class in pkg/calculator.py.
+
+Usage: You can (and should!) instruct the agent to run these tests to verify its changes to the calculator logic (e.g., run_python_file("tests.py")).
+
+Manual: python calculator/tests.py
+
+Integration Tests (for the Agent's Tools):
+
+File: tests.py (in the project root)
+
+Purpose: This is a functional integration test suite that verifies all core agent tools (e.g., write_file, get_file_content, run_python_file, web_search) are working correctly against the live calculator/ directory. It also tests the security boundaries.
+
+Usage: This file is for you (the developer) to run, not for the agent.
+
+Manual: python tests.py (Note: This requires a valid .env file for the web_search test).
 
 ⚙️ Project Architecture
 
-    main.py: The main entry point. Reads the LLM_PROVIDER config, initializes the correct client, and manages the Plan-then-Execute loop.
+main.py: The main entry point. Reads the LLM_PROVIDER config, initializes the correct client, and manages the Plan-then-Execute loop.
 
-    call_function.py: The central dispatcher. main.py passes all tool_call requests here for execution.
+call_function.py: The central dispatcher. main.py passes all tool_call requests here for execution.
 
-    tool_registry.py: The "switchboard" for all tools. It imports all tool functions and their schemas, maps them by name, and injects the working_directory.
+tool_registry.py: The "switchboard" for all tools. It imports all tool functions and their schemas, maps them by name, and injects the working_directory.
 
-    config.py: Centralized configuration. Stores API settings (like CEREBRAS_API_BASE), model names, and the system prompt templates.
+config.py: Centralized configuration. Stores API settings (like CEREBRAS_API_BASE), model names, and the system prompt templates.
 
-    logger_config.py: A simple module that sets up the timestamped file logging and verbose console logging.
+logger_config.py: A simple module that sets up the timestamped file logging and verbose console logging.
 
-    functions/: A directory containing the raw Python code for each individual tool (e.g., write_file.py, get_files_info.py).
+functions/: A directory containing the raw Python code for each individual tool (e.g., write_file.py, get_files_info.py).
 
-    logs/: This directory is automatically created and stores the detailed log file for every agent run.
+logs/: This directory is automatically created and stores the detailed log file for every agent run.
 
-    backups/: This directory is automatically created and stores file backups and change-logs generated by the write_file tool.
+backups/: This directory is automatically created and stores file backups and change-logs generated by the write_file tool.
 
-    calculator/: The self-contained example project (a command-line calculator) that the agent interacts with.
+calculator/: The self-contained example project (a command-line calculator) that the agent interacts with.
 
 🔧 How to Add a New Tool
 
-1. Create the Tool Function: Create a new file in functions/my_new_tool.py.
-```python
+Create the Tool Function: Create a new file in functions/my_new_tool.py.
+
+Python
+
 # functions/my_new_tool.py
 
 def my_new_tool(some_argument: str):
@@ -206,10 +220,10 @@ schema_my_new_tool = {
         }
     }
 }
-```
+Register the Tool: Open tool_registry.py and make two changes:
 
-2. Register the Tool: Open tool_registry.py and make two changes:
-```python
+Python
+
 # tool_registry.py
 
 # ... other imports
@@ -242,44 +256,3 @@ TOOL_DESCRIPTIONS = """
 """
 
 # ... rest of the file
-```
-
-
-**What was changed:**
-
-* I updated the main description to mention "multiple LLM APIs".
-* I rewrote the first "Feature" to highlight the new **Multi-Provider LLM Support** for Groq and Cerebras.
-* I updated the "How it Works" section to clarify that `main.py` sends the prompt to the *selected LLM API*.
-* I completely rewrote the "Configuration" section to give clear instructions for the `.env` file, explaining the new `LLM_PROVIDER` switch and where to put both the `GROQ_API_KEY` and `CEREBRAS_API_KEY`.
-* I updated the "Dependencies" section to show the new `pyproject.toml` list, which now includes `openai`.
-* I updated the "Project Architecture" section to explain `main.py`'s and `config.py`'s new roles.
-
----
-
-### Final Step: Your `.env` file (No File Generated)
-
-This is the last step. You need to **create or edit your `.env` file** in the root of your project to look like this.
-
-```dotenv
-# --- Provider Selection (REQUIRED) ---
-# Choose your LLM provider. Must be "groq" or "cerebras".
-# Defaults to "groq" if not set.
-LLM_PROVIDER="groq"
-
-# --- Groq API Key (REQUIRED if LLM_PROVIDER="groq") ---
-GROQ_API_KEY="your-groq-api-key-here"
-
-# --- Cerebras API Key (REQUIRED if LLM_PROVIDER="cerebras") ---
-CEREBRAS_API_KEY="your-cerebras-api-key-here"
-
-# --- Optional (for Web Search tool) ---
-GOOGLE_API_KEY="your-google-cloud-api-key"
-SEARCH_ENGINE_ID="your-programmable-search-engine-id"
-
-What to do:
-
-    Make sure you have run pip install -e . (or your install command) to install the openai library we added to pyproject.toml.
-
-    Get your API key from Cerebras and paste it into CEREBRAS_API_KEY.
-
-    Set LLM_PROVIDER="cerebras" to test the new connection, or set it to LLM_PROVIDER="groq" to use the original.

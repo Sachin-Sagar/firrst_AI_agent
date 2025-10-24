@@ -14,6 +14,7 @@ from functions.get_file_content import get_file_content
 from functions.run_python_file import run_python_file
 from functions.write_file import write_file
 from functions.web_search import web_search
+from functions.execute_dynamic_python import execute_dynamic_python # <-- ADDED
 
 # Get the agent's working directory from the tool registry
 # In a real scenario, this would be more robust, but we know it's "calculator"
@@ -136,9 +137,38 @@ def main():
         print(f"web_search test FAILED (or SKIPPED): {e}")
 
     print("\n---------------------------------\n")
+    
+    # --- 6. Testing execute_dynamic_python (NEW) ---
+    print("--- 6. Testing execute_dynamic_python ---")
+    try:
+        # This script checks stdout, stderr, stdin, and CWD
+        script_code = """
+import sys
+import os
+print("Hello from dynamic STDOUT")
+print(f"CWD: {os.getcwd()}", file=sys.stderr)
+data = sys.stdin.read()
+print(f"Input: {data}")
+"""
+        script_input = "TestInput"
+        result = execute_dynamic_python(WORKING_DIR, script_code, script_input)
+        print(f"Result:\n{result}")
 
-    # --- 6. Cleanup ---
-    print(f"--- 6. Cleaning up {TEST_FILE_NAME} ---")
+        # Check for STDOUT
+        assert "Hello from dynamic STDOUT" in result
+        # Check for STDIN processing
+        assert "Input: TestInput" in result
+        # Check for STDERR and CWD (sandbox)
+        assert f"CWD: {os.path.abspath(WORKING_DIR)}" in result
+        
+        print("execute_dynamic_python test passed.")
+    except Exception as e:
+        print(f"execute_dynamic_python test FAILED: {e}")
+
+    print("\n---------------------------------\n")
+
+    # --- 7. Cleanup (Renumbered) ---
+    print(f"--- 7. Cleaning up {TEST_FILE_NAME} ---")
     try:
         os.remove(os.path.join(WORKING_DIR, TEST_FILE_NAME))
         print(f"Successfully removed {TEST_FILE_NAME}.")
